@@ -1,0 +1,1 @@
+# crm_property_platform

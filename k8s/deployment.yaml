@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-property-platform
+  labels:
+    app: crm-property-platform
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crm-property-platform
+
+  template:
+    metadata:
+      labels:
+        app: crm-property-platform
+
+    spec:
+      containers:
+        - name: crm-property-platform
+          image: sumit244/crm-property-platform:1.1
+          ports:
+            - containerPort: 5000

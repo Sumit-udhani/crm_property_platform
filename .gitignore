@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage/Build
+coverage/
+build/Release
+.nyc_output
+
+# Environment Variables
+.env
+.env.test
+
+# IDE/Editor
+.vscode-test
+.eslintcache
+
+# Next.js/Nuxt.js
+.next/
+.nuxt/
+dist/

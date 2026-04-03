@@ -20,6 +20,9 @@ jobs:
       # 🔍 Debug Files
       - name: Debug Files
         run: ls -la
+# 🔍 Debug Username
+    - name: Check Username
+      run: echo "Username is: ${{ secrets.DOCKERHUB_USERNAME }}"
 
       # 🐳 Build Docker Image
       - name: Build Image

@@ -17,16 +17,14 @@ jobs:
       - name: Docker Login
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+      # 🔍 Debug Files
+      - name: Debug Files
+        run: ls -la
 
-- name: Debug Files
-  run: ls -la
-  
       # 🐳 Build Docker Image
-    # 🐳 Build Docker Image
-- name: Build Image
-  run: |
-    docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:latest .
-
+      - name: Build Image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:latest .
 
       # 🚀 Push Image
       - name: Push Image

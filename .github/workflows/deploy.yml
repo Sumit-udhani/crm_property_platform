@@ -20,11 +20,11 @@ jobs:
       # 🔍 Debug Files
       - name: Debug Files
         run: ls -la
-
+        
       # 🐳 Build Docker Image
       - name: Build Image
         run: |
-          docker build -t sumit244/crm-property-platform:latest .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:latest .
 
       # 🚀 Push Image
       - name: Push Image

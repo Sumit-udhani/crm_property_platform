@@ -86,10 +86,10 @@ export default function AuthRegister({ inputSx }) {
           {errors.lastname?.message && <FormHelperText error>{errors.lastname?.message}</FormHelperText>}
         </Grid>
         <Grid size={12}>
-          <InputLabel>Email</InputLabel>
+          <InputLabel>Emailssssssssssss</InputLabel>
           <OutlinedInput
             {...register('email', emailSchema)}
-            placeholder="example@saasable.io"
+            placeholder="example@saasable.iossssssssss"
             fullWidth
             error={Boolean(errors.email)}
             sx={{ ...inputSx }}

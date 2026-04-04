@@ -22,15 +22,30 @@ jobs:
         id: vars
         run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
 
-      # 🐳 Build Image
-      - name: Build Image
+      # ─────────────────────────────────────────
+      # 🐳 CRM BACKEND
+      # ─────────────────────────────────────────
+
+      - name: Build CRM Image
         run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }} .
 
-      # 🚀 Push Image
-      - name: Push Image
+      - name: Push CRM Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
 
-          # 🔐 Configure AWS
+      # ─────────────────────────────────────────
+      # 🐳 ADMIN PANEL
+      # ─────────────────────────────────────────
+
+      - name: Build Admin Panel Image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }} ./frontend/saasable-ui/admin/nextjs
+
+      - name: Push Admin Panel Image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }}
+
+      # ─────────────────────────────────────────
+      # 🔐 AWS + EKS Setup
+      # ─────────────────────────────────────────
+
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -38,15 +53,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ☸️ Setup Kubeconfig
       - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name CRM
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name CRM
 
-      # 🚀 Deploy
-      - name: Deploy
+      # ─────────────────────────────────────────
+      # 🚀 DEPLOY
+      # ─────────────────────────────────────────
+
+      - name: Deploy CRM
         run: |
           kubectl set image deployment/crm-property-platform \
-          crm-property-platform=${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
+            crm-property-platform=${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
 
+      - name: Deploy Admin Panel
+        run: |
+          kubectl set image deployment/admin-panel \
+            admin-panel=${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }}
+
+      # ─────────────────────────────────────────
+      # ✅ Rollout Status
+      # ─────────────────────────────────────────
+
+      - name: Rollout Status
+        run: |
           kubectl rollout status deployment/crm-property-platform
+          kubectl rollout status deployment/admin-panel

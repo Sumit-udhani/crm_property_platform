@@ -19,6 +19,7 @@ spec:
     spec:
       containers:
         - name: crm-property-platform
-          image: sumit244/crm-property-platform:1.1
+          image: sumit244/crm-property-platform:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000

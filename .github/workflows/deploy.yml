@@ -13,31 +13,31 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 🔐 Login to DockerHub
+      # 🔐 Docker Login
       - name: Docker Login
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      # 🔍 Debug Files
-      - name: Debug Files
-        run: ls -la
-        
-      # 🐳 Build Docker Image
+      # 🏷️ Generate unique image tag
+      - name: Set Image Tag
+        id: vars
+        run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      # 🐳 Build Image
       - name: Build Image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:latest .
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }} .
 
       # 🚀 Push Image
       - name: Push Image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
 
-      # ☸️ Setup Kubeconfig
-      - name: Set Kubeconfig
+      # ☸️ Deploy to EKS
+      - name: Deploy
         run: |
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
           export KUBECONFIG=$PWD/kubeconfig
 
-      # 🚀 Deploy to Kubernetes
-      - name: Deploy
-        run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+          # Update image dynamically
+          kubectl set image deployment/crm-property-platform \
+          crm-property-platform=${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
+
+          kubectl rollout status deployment/crm-property-platform

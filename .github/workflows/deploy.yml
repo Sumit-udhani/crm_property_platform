@@ -17,46 +17,6 @@ jobs:
       - name: Docker Login
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      # 🏷️ Generate unique image tag
-      - name: Set Image Tag
-        id: vars
-        run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
-
-      # 🐳 Build Image
-      - name: Build Image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }} .
-
-      # 🚀 Push Image
-      - name: Push Image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
-
-          # 🔐 Configure AWS
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-     name: CI/CD Pipeline
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      # 🔐 Docker Login
-      - name: Docker Login
-        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
       # 🏷️ Tag
       - name: Set Image Tag
         run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
@@ -83,11 +43,11 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
       # ☸️ Connect to EKS
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region ap-south-1 --name CRM
+        un: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name CRM
 
       # 🚀 Deploy Backend
       - name: Deploy Backend

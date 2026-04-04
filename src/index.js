@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 app.get("/",(req,res)=>{
-    res.send("Hello this is Kubernets")
+    res.send("Hello this is Crm")
 })
 
 app.get("/health", (req, res) => {

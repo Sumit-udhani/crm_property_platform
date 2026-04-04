@@ -30,13 +30,22 @@ jobs:
       - name: Push Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
 
-      # ☸️ Deploy to EKS
+          # 🔐 Configure AWS
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ☸️ Setup Kubeconfig
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name CRM
+
+      # 🚀 Deploy
       - name: Deploy
         run: |
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-
-          # Update image dynamically
           kubectl set image deployment/crm-property-platform \
           crm-property-platform=${{ secrets.DOCKERHUB_USERNAME }}/crm-property-platform:${{ env.TAG }}
 

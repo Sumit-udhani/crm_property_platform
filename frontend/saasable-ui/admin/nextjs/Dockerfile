@@ -3,12 +3,14 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install && npm cache clean --force
 
 COPY . .
+ARG NEXT_PUBLIC_API_HOST
+ARG NEXT_PUBLIC_BUY_URL
 
-# 👇 ensure env is present before build
-COPY .env.production .env
+ENV NEXT_PUBLIC_API_HOST=$NEXT_PUBLIC_API_HOST
+ENV NEXT_PUBLIC_BUY_URL=$NEXT_PUBLIC_BUY_URL
 
 RUN npm run build
 
@@ -17,4 +19,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

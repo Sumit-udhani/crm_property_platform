@@ -37,7 +37,12 @@ jobs:
       # ─────────────────────────────────────────
 
       - name: Build Admin Panel Image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }} ./frontend/saasable-ui/admin/nextjs
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_HOST=${{ secrets.NEXT_PUBLIC_API_HOST }} \
+            --build-arg NEXT_PUBLIC_BUY_URL=${{ secrets.NEXT_PUBLIC_BUY_URL }} \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }} \
+            ./frontend/saasable-ui/admin/nextjs
 
       - name: Push Admin Panel Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }}

@@ -61,6 +61,13 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name CRM
 
+        # 🔐 Set Database Secret in Kubernetes  ← HERE (after EKS connect, before deploy)
+      - name: Set Database Secret
+        run: |
+          kubectl create secret generic db-secret \
+            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       # ─────────────────────────────────────────
       # 🚀 DEPLOY
       # ─────────────────────────────────────────

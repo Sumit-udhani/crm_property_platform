@@ -6,4 +6,4 @@ COPY package*.json .
 RUN npm ci && npm cache clean --force
 COPY . .
 EXPOSE 5000
-CMD ["node","src/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node src/index.js"]

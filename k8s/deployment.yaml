@@ -23,3 +23,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DATABASE_URL

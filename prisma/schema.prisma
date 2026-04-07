@@ -1,12 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["partialIndexes"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema", "partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
- 
+  schemas  = ["crm_ops"]
 }
+
 model account_addresses {
   account_id   BigInt
   address_id   BigInt
@@ -15,12 +16,15 @@ model account_addresses {
   addresses    addresses @relation(fields: [address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([account_id, address_id, address_type])
+  @@schema("crm_ops")
 }
 
 model account_types {
   id       BigInt     @id @default(autoincrement())
   name     String     @unique @db.VarChar(100)
   accounts accounts[]
+
+  @@schema("crm_ops")
 }
 
 model accounts {
@@ -47,6 +51,7 @@ model accounts {
 
   @@index([account_type_id], map: "idx_accounts_account_type_id")
   @@index([branch_id], map: "idx_accounts_branch_id")
+  @@schema("crm_ops")
 }
 
 model activities {
@@ -65,12 +70,15 @@ model activities {
   users_activities_owner_user_idTousers users?         @relation("activities_owner_user_idTousers", fields: [owner_user_id], references: [id], onUpdate: NoAction)
 
   @@index([related_entity_type, related_entity_id], map: "idx_activities_entity")
+  @@schema("crm_ops")
 }
 
 model activity_types {
   id         BigInt       @id @default(autoincrement())
   name       String       @unique @db.VarChar(100)
   activities activities[]
+
+  @@schema("crm_ops")
 }
 
 model addresses {
@@ -85,18 +93,24 @@ model addresses {
   buildings         buildings[]
   contact_addresses contact_addresses[]
   projects          projects[]
+
+  @@schema("crm_ops")
 }
 
 model asset_statuses {
   id     BigInt   @id @default(autoincrement())
   name   String   @unique @db.VarChar(100)
   assets assets[]
+
+  @@schema("crm_ops")
 }
 
 model asset_types {
   id     BigInt   @id @default(autoincrement())
   name   String   @unique @db.VarChar(100)
   assets assets[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -121,6 +135,7 @@ model assets {
   tickets         tickets[]
 
   @@index([unit_id], map: "idx_assets_unit_id")
+  @@schema("crm_ops")
 }
 
 model attachments {
@@ -136,6 +151,7 @@ model attachments {
   users               users    @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([related_entity_type, related_entity_id], map: "idx_attachments_entity")
+  @@schema("crm_ops")
 }
 
 model audit_logs {
@@ -150,6 +166,7 @@ model audit_logs {
   users       users?   @relation(fields: [changed_by], references: [id], onUpdate: NoAction)
 
   @@index([table_name, record_id], map: "idx_audit_logs_table_record")
+  @@schema("crm_ops")
 }
 
 model branches {
@@ -176,12 +193,15 @@ model branches {
 
   @@unique([organization_id, code], map: "uq_branch_org_code")
   @@index([organization_id], map: "idx_branches_organization_id")
+  @@schema("crm_ops")
 }
 
 model building_types {
   id        BigInt      @id @default(autoincrement())
   name      String      @unique @db.VarChar(100)
   buildings buildings[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -204,12 +224,15 @@ model buildings {
 
   @@unique([project_id, code], map: "uq_building_project_code")
   @@index([project_id], map: "idx_buildings_project_id")
+  @@schema("crm_ops")
 }
 
 model complaint_sources {
   id      BigInt    @id @default(autoincrement())
   name    String    @unique @db.VarChar(100)
   tickets tickets[]
+
+  @@schema("crm_ops")
 }
 
 model contact_addresses {
@@ -220,12 +243,15 @@ model contact_addresses {
   contacts     contacts  @relation(fields: [contact_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([contact_id, address_id, address_type])
+  @@schema("crm_ops")
 }
 
 model contact_types {
   id       BigInt     @id @default(autoincrement())
   name     String     @unique @db.VarChar(100)
   contacts contacts[]
+
+  @@schema("crm_ops")
 }
 
 model contacts {
@@ -256,6 +282,7 @@ model contacts {
   @@index([account_id], map: "idx_contacts_account_id")
   @@index([contact_type_id], map: "idx_contacts_contact_type_id")
   @@index([email], map: "idx_contacts_email")
+  @@schema("crm_ops")
 }
 
 model escalation_levels {
@@ -263,6 +290,8 @@ model escalation_levels {
   name        String        @unique @db.VarChar(100)
   level_order Int           @unique
   escalations escalations[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -279,6 +308,7 @@ model escalations {
   tickets              tickets           @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([ticket_id], map: "idx_escalations_ticket_id")
+  @@schema("crm_ops")
 }
 
 model integration_sync_logs {
@@ -295,6 +325,7 @@ model integration_sync_logs {
   integration_systems   integration_systems @relation(fields: [integration_system_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([entity_type, entity_id], map: "idx_integration_sync_logs_entity")
+  @@schema("crm_ops")
 }
 
 model integration_systems {
@@ -302,6 +333,8 @@ model integration_systems {
   name                  String                  @unique @db.VarChar(100)
   system_type           String                  @db.VarChar(100)
   integration_sync_logs integration_sync_logs[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -316,12 +349,15 @@ model invoice_items {
   invoices    invoices @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([invoice_id], map: "idx_invoice_items_invoice_id")
+  @@schema("crm_ops")
 }
 
 model invoice_statuses {
   id       BigInt     @id @default(autoincrement())
   name     String     @unique @db.VarChar(100)
   invoices invoices[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -354,6 +390,7 @@ model invoices {
   @@index([account_id], map: "idx_invoices_account_id")
   @@index([ticket_id], map: "idx_invoices_ticket_id")
   @@index([unit_id], map: "idx_invoices_unit_id")
+  @@schema("crm_ops")
 }
 
 model lead_conversions {
@@ -367,12 +404,16 @@ model lead_conversions {
   contacts     contacts? @relation(fields: [contact_id], references: [id], onUpdate: NoAction)
   users        users     @relation(fields: [converted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   leads        leads     @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("crm_ops")
 }
 
 model lead_sources {
   id    BigInt  @id @default(autoincrement())
   name  String  @unique @db.VarChar(100)
   leads leads[]
+
+  @@schema("crm_ops")
 }
 
 model lead_statuses {
@@ -380,6 +421,8 @@ model lead_statuses {
   name       String  @unique @db.VarChar(100)
   sort_order Int     @default(0)
   leads      leads[]
+
+  @@schema("crm_ops")
 }
 
 model leads {
@@ -415,6 +458,7 @@ model leads {
   @@index([lead_source_id], map: "idx_leads_lead_source_id")
   @@index([lead_status_id], map: "idx_leads_lead_status_id")
   @@index([lifecycle_stage_id], map: "idx_leads_lifecycle_stage_id")
+  @@schema("crm_ops")
 }
 
 model lifecycle_stages {
@@ -422,6 +466,8 @@ model lifecycle_stages {
   name       String  @unique @db.VarChar(100)
   sort_order Int     @default(0)
   leads      leads[]
+
+  @@schema("crm_ops")
 }
 
 model notes {
@@ -434,6 +480,7 @@ model notes {
   users               users    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([related_entity_type, related_entity_id], map: "idx_notes_entity")
+  @@schema("crm_ops")
 }
 
 model organizations {
@@ -443,18 +490,24 @@ model organizations {
   created_at DateTime   @default(now()) @db.Timestamptz(6)
   updated_at DateTime   @default(now()) @db.Timestamptz(6)
   branches   branches[]
+
+  @@schema("crm_ops")
 }
 
 model ownership_types {
   id              BigInt            @id @default(autoincrement())
   name            String            @unique @db.VarChar(100)
   unit_ownerships unit_ownerships[]
+
+  @@schema("crm_ops")
 }
 
 model payment_methods {
   id       BigInt     @id @default(autoincrement())
   name     String     @unique @db.VarChar(100)
   payments payments[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -474,6 +527,7 @@ model payments {
   users              users?          @relation(fields: [recorded_by], references: [id], onUpdate: NoAction)
 
   @@index([invoice_id], map: "idx_payments_invoice_id")
+  @@schema("crm_ops")
 }
 
 model permissions {
@@ -482,12 +536,16 @@ model permissions {
   name             String             @db.VarChar(150)
   module_name      String             @db.VarChar(100)
   role_permissions role_permissions[]
+
+  @@schema("crm_ops")
 }
 
 model project_statuses {
   id       BigInt     @id @default(autoincrement())
   name     String     @unique @db.VarChar(100)
   projects projects[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -515,6 +573,7 @@ model projects {
 
   @@index([branch_id], map: "idx_projects_branch_id")
   @@index([project_status_id], map: "idx_projects_status_id")
+  @@schema("crm_ops")
 }
 
 model role_permissions {
@@ -524,6 +583,7 @@ model role_permissions {
   roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([role_id, permission_id])
+  @@schema("crm_ops")
 }
 
 model roles {
@@ -532,6 +592,8 @@ model roles {
   description      String?            @db.VarChar(255)
   role_permissions role_permissions[]
   user_roles       user_roles[]
+
+  @@schema("crm_ops")
 }
 
 model sla_policies {
@@ -539,6 +601,8 @@ model sla_policies {
   name             String             @unique @db.VarChar(150)
   description      String?            @db.VarChar(255)
   sla_policy_rules sla_policy_rules[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -556,12 +620,15 @@ model sla_policy_rules {
 
   @@unique([sla_policy_id, ticket_priority_id, ticket_category_id], map: "uq_sla_rule")
   @@index([sla_policy_id], map: "idx_sla_policy_rules_policy_id")
+  @@schema("crm_ops")
 }
 
 model tenancy_statuses {
   id             BigInt           @id @default(autoincrement())
   name           String           @unique @db.VarChar(100)
   unit_tenancies unit_tenancies[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -579,6 +646,7 @@ model ticket_assignments {
 
   @@index([assigned_user_id], map: "idx_ticket_assignments_assigned_user_id")
   @@index([ticket_id], map: "idx_ticket_assignments_ticket_id")
+  @@schema("crm_ops")
 }
 
 model ticket_categories {
@@ -586,6 +654,8 @@ model ticket_categories {
   name             String             @unique @db.VarChar(100)
   sla_policy_rules sla_policy_rules[]
   tickets          tickets[]
+
+  @@schema("crm_ops")
 }
 
 model ticket_priorities {
@@ -594,6 +664,8 @@ model ticket_priorities {
   sort_order       Int                @default(0)
   sla_policy_rules sla_policy_rules[]
   tickets          tickets[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -611,6 +683,7 @@ model ticket_sla_instances {
   tickets             tickets          @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([ticket_id], map: "idx_ticket_sla_instances_ticket_id")
+  @@schema("crm_ops")
 }
 
 model ticket_status_history {
@@ -627,6 +700,7 @@ model ticket_status_history {
   tickets                                                              tickets          @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([ticket_id], map: "idx_ticket_status_history_ticket_id")
+  @@schema("crm_ops")
 }
 
 model ticket_statuses {
@@ -637,6 +711,8 @@ model ticket_statuses {
   ticket_status_history_ticket_status_history_new_status_idToticket_statuses ticket_status_history[] @relation("ticket_status_history_new_status_idToticket_statuses")
   ticket_status_history_ticket_status_history_old_status_idToticket_statuses ticket_status_history[] @relation("ticket_status_history_old_status_idToticket_statuses")
   tickets                                                                    tickets[]
+
+  @@schema("crm_ops")
 }
 
 model tickets {
@@ -684,6 +760,7 @@ model tickets {
   @@index([requester_contact_id], map: "idx_tickets_requester_contact_id")
   @@index([ticket_status_id], map: "idx_tickets_status_id")
   @@index([unit_id], map: "idx_tickets_unit_id")
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -703,12 +780,15 @@ model unit_ownerships {
 
   @@index([contact_id], map: "idx_unit_ownerships_contact_id")
   @@index([unit_id], map: "idx_unit_ownerships_unit_id")
+  @@schema("crm_ops")
 }
 
 model unit_statuses {
   id    BigInt  @id @default(autoincrement())
   name  String  @unique @db.VarChar(100)
   units units[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -729,12 +809,15 @@ model unit_tenancies {
 
   @@index([tenant_contact_id], map: "idx_unit_tenancies_tenant_contact_id")
   @@index([unit_id], map: "idx_unit_tenancies_unit_id")
+  @@schema("crm_ops")
 }
 
 model unit_types {
   id    BigInt  @id @default(autoincrement())
   name  String  @unique @db.VarChar(100)
   units units[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -762,6 +845,7 @@ model units {
 
   @@unique([building_id, unit_number], map: "uq_units_building_unit")
   @@index([building_id], map: "idx_units_building_id")
+  @@schema("crm_ops")
 }
 
 model user_roles {
@@ -772,6 +856,7 @@ model user_roles {
   users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([user_id, role_id])
+  @@schema("crm_ops")
 }
 
 model users {
@@ -814,12 +899,15 @@ model users {
   work_orders_work_orders_created_byTousers                     work_orders[]           @relation("work_orders_created_byTousers")
 
   @@index([branch_id], map: "idx_users_branch_id")
+  @@schema("crm_ops")
 }
 
 model work_order_statuses {
   id          BigInt        @id @default(autoincrement())
   name        String        @unique @db.VarChar(100)
   work_orders work_orders[]
+
+  @@schema("crm_ops")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -844,4 +932,5 @@ model work_orders {
 
   @@index([assigned_user_id], map: "idx_work_orders_assigned_user_id")
   @@index([ticket_id], map: "idx_work_orders_ticket_id")
+  @@schema("crm_ops")
 }

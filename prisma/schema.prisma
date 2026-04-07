@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["crm_ops"]
 }
 model account_addresses {
   account_id   BigInt

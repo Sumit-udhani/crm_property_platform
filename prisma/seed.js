@@ -8,14 +8,12 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  await prisma.roles.upsert({
-    where: { name: 'SUPER ADMIN' },
-    update: {},
-    create: {
+ await prisma.roles.create({
+    data: {
       name: 'SUPER ADMIN',
       description: 'Super Admin with full access'
     }
-  });
+  })
   console.log('✅ SUPER ADMIN role ensured');
 }
 

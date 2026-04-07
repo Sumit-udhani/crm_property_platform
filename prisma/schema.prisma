@@ -1,12 +1,11 @@
 generator client {
- provider = "prisma-client-js"
+  provider = "prisma-client-js"
   previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
 }
-
 model account_addresses {
   account_id   BigInt
   address_id   BigInt

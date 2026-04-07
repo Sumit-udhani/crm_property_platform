@@ -9,4 +9,4 @@ COPY . .
 
 
 EXPOSE 5000
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && node src/index.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma db seed && node src/index.js"]

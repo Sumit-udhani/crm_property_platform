@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic';
 
 // @project
-const AuthRegister = dynamic(() => import('@/views/register'));
+const AuthRegister = dynamic(() => import('@/views/auth/register'));
 
 /***************************  AUTH - REGISTER  ***************************/
 

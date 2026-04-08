@@ -57,10 +57,10 @@ export default function AuthLogin({ inputSx }) {
       localStorage.setItem('token', response.data.token)
       localStorage.setItem('userId', response.data.userId)
 
-      // Set cookie for middleware
+      
       document.cookie = `token=${response.data.token}; path=/; max-age=86400`
 
-      // ✅ Redirect to dashboard after login
+      
       router.push('/dashboard')
     }
 

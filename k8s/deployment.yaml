@@ -30,8 +30,8 @@ spec:
                   name: db-secret
                   key: DATABASE_URL
 
-            -  name: EMAIL_HOST
-               valueFrom:
+            - name: EMAIL_HOST
+              valueFrom:
                 secretKeyRef:
                   name: app-secret
                   key: EMAIL_HOST

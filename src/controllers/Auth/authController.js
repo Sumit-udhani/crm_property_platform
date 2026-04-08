@@ -1,7 +1,7 @@
 const prisma = require('../../config/prisma');
 
 const { generateToken } = require("../../utils/jwt");
-
+const bcrypt = require('bcrypt');
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;

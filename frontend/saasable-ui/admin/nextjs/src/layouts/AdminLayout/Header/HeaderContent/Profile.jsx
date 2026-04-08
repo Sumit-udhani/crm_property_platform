@@ -32,6 +32,8 @@ import useConfig from '@/hooks/useConfig';
 import authService from '@/services/auth.service';
 // @assets
 import { IconChevronRight, IconLanguage, IconLogout, IconSettings, IconTextDirectionLtr } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+
 
 /***************************  HEADER - PROFILE DATA  ***************************/
 
@@ -55,7 +57,7 @@ export default function ProfileSection() {
   const {
     state: { i18n }
   } = useConfig();
-
+const router = useRouter()
   const [anchorEl, setAnchorEl] = useState(null);
   const [innerAnchorEl, setInnerAnchorEl] = useState(null);
 

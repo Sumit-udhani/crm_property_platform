@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
       where: { id: user.id },
       data: {
         token: token,
-        token_expires: tokenExpires,
+        token_expiry: tokenExpires,
       }
     })
 
@@ -85,7 +85,7 @@ exports.logout = async (req, res) => {
       where: { id: userId },
       data: {
         token: null,
-        token_expires: null,
+        token_expiry: null,
       }
     })
 

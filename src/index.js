@@ -1,9 +1,21 @@
 const express = require('express');
 const dotenv = require('dotenv').config();
+const cors = require('cors');
 const app = express();
+
+app.use(cors({
+  origin: [
+    "http://k8s-default-adminser-4281436428-e0941ea5c9c14f92.elb.ap-south-1.amazonaws.com"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
 //middleware
 app.use(express.json());
+const authRoutes = require("./routes/auth.routes");
+app.use("/api/v1/auth", authRoutes);
 
 app.get("/",(req,res)=>{
     res.send("Hello this is Crmssss")

@@ -29,3 +29,34 @@ spec:
                 secretKeyRef:
                   name: db-secret
                   key: DATABASE_URL
+
+            -  name: EMAIL_HOST
+               valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: EMAIL_HOST
+            - name: EMAIL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: EMAIL_PORT
+            - name: EMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: EMAIL_USER
+            - name: EMAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: EMAIL_PASS
+            - name: EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: EMAIL_FROM
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: JWT_SECRET

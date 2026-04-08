@@ -95,13 +95,23 @@ jobs:
         run: |
           kubectl exec deployment/crm-property-platform -- node prisma/seed.js
 
+      - name: Set App Secrets
+        run: |
+          kubectl create secret generic app-secret \
+            --from-literal=EMAIL_HOST=${{ secrets.EMAIL_HOST }} \
+            --from-literal=EMAIL_PORT=${{ secrets.EMAIL_PORT }} \
+            --from-literal=EMAIL_USER=${{ secrets.EMAIL_USER }} \
+            --from-literal=EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
+            --from-literal=EMAIL_FROM="${{ secrets.EMAIL_FROM }}" \
+            --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --dry-run=client -o yaml | kubectl apply -f -
       # 🚀 Deploy Admin Panel
       - name: Deploy Admin Panel
         run: |
           kubectl set image deployment/admin-panel \
             admin-panel=${{ secrets.DOCKERHUB_USERNAME }}/admin-panel:${{ env.TAG }}
 
-      # ✅ Wait for Admin rollout
+      # ✅ Wait for Admin rollout   
       - name: Rollout Status
         run: |
          kubectl rollout status deployment/admin-panel

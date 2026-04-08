@@ -19,7 +19,7 @@ import Popper from '@mui/material/Popper';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Box from '@mui/material/Box';
-
+import { APP_DEFAULT_PATH } from '@/config';
 // @third-party
 import { enqueueSnackbar } from 'notistack';
 
@@ -80,7 +80,8 @@ const logoutAccount = async () => {
     setAnchorEl(null);
    const response =  await authService.logout();
     if (response.success) {
-      router.push('/login');
+      console.log('logout.......')
+      router.push(APP_DEFAULT_PATH);
     }
 
   } catch (error) {

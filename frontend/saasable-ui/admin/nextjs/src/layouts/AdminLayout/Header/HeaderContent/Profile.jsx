@@ -75,17 +75,17 @@ const router = useRouter()
     setInnerAnchorEl(innerAnchorEl ? null : event.currentTarget);
   };
 
-  const logoutAccount = async() => {
-    try {
-      setAnchorEl(null);
-       await authService.logout();
-       router.push('/login')
-      
-    } catch (error) {
-      
-    }
-  };
-
+const logoutAccount = async () => {
+  try {
+    setAnchorEl(null);
+    await authService.logout();
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+   
+    router.push('/login');
+  }
+};
   const i18nHandler = (event, key) => {
     handleInnerActionClick(event);
     if (key != i18n) enqueueSnackbar('Upgrade to pro for language change');

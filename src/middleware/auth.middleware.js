@@ -1,8 +1,7 @@
-// src/middleware/auth.middleware.js
-
 const { verifyToken } = require("../utils/jwt");
+const prisma = require("../config/prisma");
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     // 1. Get Authorization header
     const authHeader = req.headers.authorization;
@@ -32,13 +31,30 @@ const authMiddleware = (req, res, next) => {
       });
     }
 
-    // 4. Verify token
+    // 4. Verify JWT signature
     const decoded = verifyToken(token);
 
-    // 5. Attach user info to request
-    req.user = decoded;
+    // 5. Check token exists in DB and not expired
+    const user = await prisma.users.findUnique({
+      where: { id: BigInt(decoded.userId) }
+    })
 
-    // 6. Continue
+    if (!user || user.token !== token) {
+      return res.status(401).json({
+        success: false,
+        message: "Session expired or logged out. Please login again.",
+      })
+    }
+
+    if (user.token_expires && new Date() > new Date(user.token_expires)) {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired. Please login again.",
+      })
+    }
+
+    // 6. Attach user to request
+    req.user = decoded;
     next();
 
   } catch (error) {

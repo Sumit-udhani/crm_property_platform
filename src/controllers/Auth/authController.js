@@ -1,7 +1,8 @@
 const prisma = require('../../config/prisma');
-
 const { generateToken } = require("../../utils/jwt");
 const bcrypt = require('bcrypt');
+
+// ─── LOGIN ───
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,7 +41,21 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Generate token
     const token = generateToken({ userId: user.id.toString() });
+
+    // Calculate expiry (24h from now)
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    // Store token and expiry in DB
+    await prisma.users.update({
+      where: { id: user.id },
+      data: {
+        token: token,
+        token_expires: tokenExpires,
+      }
+    })
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
@@ -52,7 +67,6 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error("Login Error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -60,3 +74,32 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// ─── LOGOUT ───
+exports.logout = async (req, res) => {
+  try {
+    const userId = BigInt(req.user.userId) // convert back to BigInt for DB
+
+    // Clear token from DB
+    await prisma.users.update({
+      where: { id: userId },
+      data: {
+        token: null,
+        token_expires: null,
+      }
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    })
+
+  } catch (error) {
+    console.error("Logout Error:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    })
+  }
+}

@@ -77,6 +77,7 @@ export default function ProfileSection() {
     try {
       setAnchorEl(null);
        await authService.logout();
+       router.push('/login')
       
     } catch (error) {
       

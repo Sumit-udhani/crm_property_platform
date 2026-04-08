@@ -40,14 +40,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = generateToken({ userId: user.id });
-
+    const token = generateToken({ userId: user.id.toString() });
     return res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
         token,
-        userId: user.id,
+        userId: user.id.toString(),
       },
     });
 

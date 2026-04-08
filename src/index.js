@@ -14,6 +14,9 @@ app.use(cors({
 
 //middleware
 app.use(express.json());
+BigInt.prototype.toJSON = function() {
+  return this.toString()
+}
 const authRoutes = require("./routes/auth.routes");
 app.use("/api/v1/auth", authRoutes);
 

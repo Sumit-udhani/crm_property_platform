@@ -5,12 +5,12 @@ export const emailSchema = {
 
 export const passwordSchema = {
   required: 'Password is required',
-  minLength: { value: 8, message: 'Password must be at least 8 characters' },
+  minLength: { value: 7, message: 'Password must be at least 8 characters' },
   validate: {
     noSpaces: (value) => !/\s/.test(value) || 'Password cannot contain spaces',
-    hasUpperCase: (value) => /[A-Z]/.test(value) || 'Password must have at least one uppercase letter',
+    // hasUpperCase: (value) => /[A-Z]/.test(value) || 'Password must have at least one uppercase letter',
     hasNumber: (value) => /[0-9]/.test(value) || 'Password must have at least one number',
-    hasSpecialChar: (value) => /[!@#$%^&*(),.?":{}|<>]/.test(value) || 'Password must have at least one special character'
+    // hasSpecialChar: (value) => /[!@#$%^&*(),.?":{}|<>]/.test(value) || 'Password must have at least one special character'
   }
 };
 

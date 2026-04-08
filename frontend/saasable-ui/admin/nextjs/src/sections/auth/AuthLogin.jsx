@@ -2,9 +2,7 @@
 import PropTypes from 'prop-types';
 
 // @next
-import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
-
 import { useState } from 'react';
 
 // @mui
@@ -26,20 +24,10 @@ import { useForm } from 'react-hook-form';
 // @project
 import { APP_DEFAULT_PATH } from '@/config';
 import { emailSchema, passwordSchema } from '@/utils/validation-schema/common';
+import authService from '@/services/auth.service';
 
 // @icons
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
-
-// Mock user credentials
-const userCredentials = [
-  { title: 'Super Admin', email: 'super_admin@saasable.io', password: 'Super@123' },
-  { title: 'Admin', email: 'admin@saasable.io', password: 'Admin@123' },
-  { title: 'User', email: 'user@saasable.io', password: 'User@123' }
-];
-
-function isChildObjectContained(parent, child) {
-  return Object.entries(child).every(([key, value]) => parent.hasOwnProperty(key) && parent[key] === value);
-}
 
 /***************************  AUTH - LOGIN  ***************************/
 
@@ -51,51 +39,49 @@ export default function AuthLogin({ inputSx }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  // Initialize react-hook-form
   const {
     register,
-    watch,
     handleSubmit,
-    reset,
     formState: { errors }
-  } = useForm({ defaultValues: { email: 'super_admin@saasable.io', password: 'Super@123' } });
+  } = useForm({ defaultValues: { email: '', password: '' } });
 
-  const formData = watch();
+  // ─── Handle Login ───
+ const onSubmit = async (formData) => {
+  setIsProcessing(true);
+  setLoginError('');
 
-  // Handle form submission
-  const onSubmit = (formData) => {
-    setIsProcessing(true);
-    setLoginError('');
+  try {
+    const response = await authService.login(formData.email, formData.password)
 
-    router.push(APP_DEFAULT_PATH);
-  };
+    if (response.success) {
+      localStorage.setItem('token', response.data.token)
+      localStorage.setItem('userId', response.data.userId)
 
+      // Set cookie for middleware
+      document.cookie = `token=${response.data.token}; path=/; max-age=86400`
+
+      // ✅ Redirect to dashboard after login
+      router.push('/dashboard')
+    }
+
+  } catch (error) {
+    const message = error?.response?.data?.message || 'Login failed. Please try again.'
+    setLoginError(message)
+  } finally {
+    setIsProcessing(false)
+  }
+};
   const commonIconProps = { size: 16, color: theme.vars.palette.grey[700] };
 
   return (
     <>
-      <Stack direction="row" sx={{ gap: 1, mb: 2 }}>
-        {userCredentials.map((credential) => (
-          <Button
-            key={credential.title}
-            variant="outlined"
-            color={isChildObjectContained(credential, formData) ? 'primary' : 'secondary'}
-            sx={{ flex: 1 }}
-            onClick={() => {
-              reset({ email: credential.email, password: credential.password });
-            }}
-          >
-            {credential.title}
-          </Button>
-        ))}
-      </Stack>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack gap={2}>
           <Box>
             <InputLabel>Email</InputLabel>
             <OutlinedInput
               {...register('email', emailSchema)}
-              placeholder="example@saasable.io"
+              placeholder="example@domain.com"
               fullWidth
               error={Boolean(errors.email)}
               sx={inputSx}
@@ -112,16 +98,24 @@ export default function AuthLogin({ inputSx }) {
               fullWidth
               error={Boolean(errors.password)}
               endAdornment={
-                <InputAdornment position="end" sx={{ cursor: 'pointer' }} onClick={() => setIsPasswordVisible(!isPasswordVisible)}>
-                  {isPasswordVisible ? <IconEye {...commonIconProps} /> : <IconEyeOff {...commonIconProps} />}
+                <InputAdornment
+                  position="end"
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                >
+                  {isPasswordVisible
+                    ? <IconEye {...commonIconProps} />
+                    : <IconEyeOff {...commonIconProps} />}
                 </InputAdornment>
               }
               sx={inputSx}
             />
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: errors.password ? 'space-between' : 'flex-end', width: 1 }}>
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', justifyContent: errors.password ? 'space-between' : 'flex-end', width: 1 }}
+            >
               {errors.password?.message && <FormHelperText error>{errors.password.message}</FormHelperText>}
               <Link
-                component={NextLink}
                 underline="hover"
                 variant="caption"
                 href="#"

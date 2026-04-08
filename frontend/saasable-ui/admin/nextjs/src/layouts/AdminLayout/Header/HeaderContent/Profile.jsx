@@ -29,7 +29,7 @@ import MainCard from '@/components/MainCard';
 import Profile from '@/components/Profile';
 import { AvatarSize, ChipIconPosition } from '@/enum';
 import useConfig from '@/hooks/useConfig';
-
+import authService from '@/services/auth.service';
 // @assets
 import { IconChevronRight, IconLanguage, IconLogout, IconSettings, IconTextDirectionLtr } from '@tabler/icons-react';
 
@@ -73,8 +73,14 @@ export default function ProfileSection() {
     setInnerAnchorEl(innerAnchorEl ? null : event.currentTarget);
   };
 
-  const logoutAccount = () => {
-    setAnchorEl(null);
+  const logoutAccount = async() => {
+    try {
+      setAnchorEl(null);
+       await authService.logout();
+      
+    } catch (error) {
+      
+    }
   };
 
   const i18nHandler = (event, key) => {

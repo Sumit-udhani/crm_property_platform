@@ -10,7 +10,7 @@ const cspHeader = `
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'self';
-    connect-src 'self' https://cdn.jsdelivr.net;
+    connect-src 'self' https://cdn.jsdelivr.net http://k8s-default-crmprope-f9f9246cb9-baff2ed4a9c40657.elb.ap-south-1.amazonaws.com;
 `;
 
 const nextConfig = {

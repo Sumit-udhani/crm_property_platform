@@ -58,7 +58,9 @@ export default function AuthLogin({ inputSx }) {
       localStorage.setItem('userId', response.data.userId)
 
       
-      document.cookie = `token=${response.data.token}; path=/; max-age=86400`
+      // When setting cookie on login
+const domain = window.location.hostname
+document.cookie = `token=${response.data.token}; path=/; max-age=86400; domain=${domain}`
 
       
       router.push('/dashboard')

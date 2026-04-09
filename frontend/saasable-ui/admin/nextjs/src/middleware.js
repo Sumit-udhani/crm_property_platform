@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 export function middleware(request) {
-  // ✅ Use cookies instead of localStorage (middleware runs on server)
+  console.log("Midlleware triggered")
   const token = request.cookies.get('token')?.value
   const pathname = request.nextUrl.pathname
 

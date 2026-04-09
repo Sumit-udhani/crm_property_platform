@@ -13,6 +13,7 @@ const authService = {
     const response = await axiosInstance.post('/auth/logout')
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
+    document.cookie = 'token=; path=/; max-age=0'
     return response.data
   },
 

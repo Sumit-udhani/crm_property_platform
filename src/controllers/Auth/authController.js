@@ -1,5 +1,5 @@
 const prisma = require('../../config/prisma');
-const { generateToken } = require("../../utils/jwt");
+const { generateToken,verifyToken } = require("../../utils/jwt");
 const bcrypt = require('bcrypt');
 
 // ─── LOGIN ───
@@ -42,7 +42,7 @@ exports.login = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken({ userId: user.id.toString() });
+    const token = generateToken({ userId: user.id.toString() },"24hr");
 
     // Calculate expiry (24h from now)
     const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -103,3 +103,87 @@ exports.logout = async (req, res) => {
     })
   }
 }
+exports.setPassword = async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+
+    
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token, password and confirmPassword are required",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    // ✅ 3. Check token type
+    if (decoded.type !== "SET_PASSWORD") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid token type",
+      });
+    }
+
+    // ✅ 4. Find user
+    const user = await prisma.users.findUnique({
+      where: { id: BigInt(decoded.userId) },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+   
+    if (user.password_hash) {
+      return res.status(400).json({
+        success: false,
+        message: "Password already set. Please login.",
+      });
+    }
+
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+   
+    await prisma.users.update({
+      where: { id: user.id },
+      data: {
+        password_hash: hashedPassword,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password set successfully. Please login.",
+    });
+
+  } catch (error) {
+    console.error("Set Password Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};

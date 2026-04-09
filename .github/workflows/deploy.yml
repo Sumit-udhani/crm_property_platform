@@ -78,6 +78,7 @@ jobs:
             --from-literal=EMAIL_HOST=${{ secrets.EMAIL_HOST }} \
             --from-literal=EMAIL_PORT=${{ secrets.EMAIL_PORT }} \
             --from-literal=EMAIL_USER=${{ secrets.EMAIL_USER }} \
+            --from-literal=FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
             --from-literal=EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
             --from-literal=EMAIL_FROM="${{ secrets.EMAIL_FROM }}" \
             --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \

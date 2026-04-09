@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: app-secret
                   key: EMAIL_USER
+            - name: FRONTEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: FRONTEND_URL
             - name: EMAIL_PASS
               valueFrom:
                 secretKeyRef:

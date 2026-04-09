@@ -25,7 +25,7 @@ import { useForm } from 'react-hook-form';
 import { APP_DEFAULT_PATH } from '@/config';
 import { emailSchema, passwordSchema } from '@/utils/validation-schema/common';
 import authService from '@/services/auth.service';
-
+import { useEffect } from 'react'
 // @icons
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 
@@ -45,7 +45,20 @@ export default function AuthLogin({ inputSx }) {
     formState: { errors }
   } = useForm({ defaultValues: { email: '', password: '' } });
 
-  // ─── Handle Login ───
+
+
+   useEffect(() => {
+    const passwordSet = localStorage.getItem('passwordSetSuccess')
+    if (passwordSet) {
+      enqueueSnackbar('Password set successfully! Please login.', {
+        variant: 'success',
+        autoHideDuration: 4000,
+        anchorOrigin: { vertical: 'top', horizontal: 'right' }
+      })
+      localStorage.removeItem('passwordSetSuccess')
+    }
+  }, [])
+  
  const onSubmit = async (formData) => {
   setIsProcessing(true);
   setLoginError('');

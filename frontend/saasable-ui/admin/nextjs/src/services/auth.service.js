@@ -23,8 +23,17 @@ logout: async () => {
   }
 
   return response.data
-}
+},
 
+
+setPassword: async (token, password, confirmPassword) => {
+    const response = await axiosInstance.post('/auth/set-password', {
+      token,
+      password,
+      confirmPassword
+    })
+    return response.data
+  }
 }
 
 export default authService

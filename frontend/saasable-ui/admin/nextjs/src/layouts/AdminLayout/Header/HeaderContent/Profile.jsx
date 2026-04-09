@@ -78,14 +78,16 @@ const router = useRouter()
 const logoutAccount = async () => {
   try {
     setAnchorEl(null);
-   const response =  await authService.logout();
+    const response = await authService.logout();
+    
     if (response.success) {
-      console.log('logout.......')
-      router.push(APP_DEFAULT_PATH);
+      
+      window.location.href = '/login'
     }
 
   } catch (error) {
     console.error('Logout error:', error);
+   
   }
 };
   const i18nHandler = (event, key) => {

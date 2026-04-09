@@ -9,13 +9,17 @@ const authService = {
   },
 
   // ─── Logout ───
-  logout: async () => {
-    const response = await axiosInstance.post('/auth/logout')
+logout: async () => {
+  const response = await axiosInstance.post('/auth/logout')
+  
+  if (response.success) {
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
     document.cookie = 'token=; path=/; max-age=0'
-    return response.data
-  },
+  }
+
+  return response.data
+}
 
 }
 

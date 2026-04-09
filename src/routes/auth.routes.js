@@ -12,7 +12,7 @@ router.post("/login", authController.login);
 router.post("/logout",authMiddleware, authController.logout);
 
 // Set Password (from email link)
-// router.post("/set-password", authController.setPassword);
+router.post("/set-password", authController.setPassword);
 
 // // (Optional) Get current user
 // const authMiddleware = require("../middleware/auth.middleware");

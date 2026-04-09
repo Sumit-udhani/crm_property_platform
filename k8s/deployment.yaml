@@ -6,7 +6,7 @@ metadata:
     app: crm-property-platform
 
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: crm-property-platform

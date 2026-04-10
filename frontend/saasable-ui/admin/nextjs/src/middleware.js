@@ -5,7 +5,7 @@ export function middleware(request) {
   const token = request.cookies.get('token')?.value
   const pathname = request.nextUrl.pathname
 
-  const isAuthPage = pathname === '/login'
+  const isAuthPage = pathname === '/login'||pathname === '/set-password'
   const isDashboard = pathname.startsWith('/dashboard')
 
   // No token + trying to access dashboard → go to login

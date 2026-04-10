@@ -48,6 +48,7 @@ export default function AuthLogin({ inputSx }) {
 
 
    useEffect(() => {
+  if (typeof window !== 'undefined') {
     const passwordSet = localStorage.getItem('passwordSetSuccess')
     if (passwordSet) {
       enqueueSnackbar('Password set successfully! Please login.', {
@@ -57,7 +58,8 @@ export default function AuthLogin({ inputSx }) {
       })
       localStorage.removeItem('passwordSetSuccess')
     }
-  }, [])
+  }
+}, [])
   
  const onSubmit = async (formData) => {
   setIsProcessing(true);

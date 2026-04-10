@@ -26,7 +26,7 @@ import { APP_DEFAULT_PATH } from '@/config';
 import { emailSchema, passwordSchema } from '@/utils/validation-schema/common';
 import authService from '@/services/auth.service';
 import { useEffect } from 'react'
-// @icons
+import { useSnackbar } from 'notistack'
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 
 /***************************  AUTH - LOGIN  ***************************/
@@ -34,7 +34,7 @@ import { IconEye, IconEyeOff } from '@tabler/icons-react';
 export default function AuthLogin({ inputSx }) {
   const router = useRouter();
   const theme = useTheme();
-
+  const { enqueueSnackbar } = useSnackbar()
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [loginError, setLoginError] = useState('');

@@ -36,11 +36,7 @@ import { useRouter } from 'next/navigation';
 
 
 /***************************  HEADER - PROFILE DATA  ***************************/
- const [profileData, setProfileData] = useState({
-    avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
-    title: '',
-    caption: ''
-  });
+
 
 const languageList = [
   { key: ThemeI18n.EN, value: 'English' },
@@ -59,7 +55,11 @@ export default function ProfileSection() {
 const router = useRouter()
   const [anchorEl, setAnchorEl] = useState(null);
   const [innerAnchorEl, setInnerAnchorEl] = useState(null);
-
+ const [profileData, setProfileData] = useState({
+    avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
+    title: '',
+    caption: ''
+  });
   const open = Boolean(anchorEl);
   const innerOpen = Boolean(innerAnchorEl);
   const id = open ? 'profile-action-popper' : undefined;

@@ -187,4 +187,58 @@ exports.setPassword = async (req, res) => {
     });
   }
 };
+exports.getMe = async (req, res) => {
+  try {
+    const userId = BigInt(req.user.userId)
+
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        phone: true,
+        is_active: true,
+        user_roles: {
+          select: {
+            roles: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      data: {
+        id: user.id.toString(),
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone: user.phone,
+        role_name: user.user_roles[0]?.roles?.name || null
+      }
+    })
+
+  } catch (error) {
+    console.error("Get Me Error:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    })
+  }
+}
 

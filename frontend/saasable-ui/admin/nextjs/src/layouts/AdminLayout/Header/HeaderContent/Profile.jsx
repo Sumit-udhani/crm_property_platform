@@ -36,12 +36,11 @@ import { useRouter } from 'next/navigation';
 
 
 /***************************  HEADER - PROFILE DATA  ***************************/
-
-const profileData = {
-  avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
-  title: 'Erika Collins',
-  caption: 'Super Admin'
-};
+ const [profileData, setProfileData] = useState({
+    avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
+    title: '',
+    caption: ''
+  });
 
 const languageList = [
   { key: ThemeI18n.EN, value: 'English' },
@@ -75,6 +74,25 @@ const router = useRouter()
     setInnerAnchorEl(innerAnchorEl ? null : event.currentTarget);
   };
 
+
+    useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await authService.getMe()
+        if (response.success) {
+          const { first_name, last_name, role_name } = response.data
+          setProfileData({
+            avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
+            title: `${first_name} ${last_name || ''}`.trim(),
+            caption: role_name || ''
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error)
+      }
+    }
+    fetchUser()
+  }, [])
 const logoutAccount = async () => {
   try {
     setAnchorEl(null);

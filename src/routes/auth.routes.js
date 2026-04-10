@@ -14,14 +14,6 @@ router.post("/logout",authMiddleware, authController.logout);
 // Set Password (from email link)
 router.post("/set-password", authController.setPassword);
 
-// // (Optional) Get current user
-// const authMiddleware = require("../middleware/auth.middleware");
-// router.get("/me", authMiddleware, (req, res) => {
-//   return res.status(200).json({
-//     success: true,
-//     message: "User fetched successfully",
-//     data: req.user,
-//   });
-// });
+router.get("/me", authMiddleware, authController.getMe);
 
 module.exports = router;

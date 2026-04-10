@@ -46,7 +46,10 @@ exports.createUser = async (req, res) => {
       },
     });
 
-    
+    const role = await prisma.roles.findUnique({
+  where: { id: BigInt(role_id) }
+})
+
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -66,7 +69,10 @@ exports.createUser = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User created and email sent",
-      data: user,
+      data: {
+    ...user,
+    role_name: role?.name || null  
+  },
     });
 
   } catch (error) {

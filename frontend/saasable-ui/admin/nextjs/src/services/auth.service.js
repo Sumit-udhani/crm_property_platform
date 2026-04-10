@@ -33,7 +33,11 @@ setPassword: async (token, password, confirmPassword) => {
       confirmPassword
     })
     return response.data
-  }
+  },
+  getMe: async () => {
+  const response = await axiosInstance.get('/auth/me')
+  return response.data
+}
 }
 
 export default authService

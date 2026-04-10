@@ -6,6 +6,14 @@ const pages = {
   icon: 'IconDotsVertical',
   type: 'group',
   children: [
+     {
+      id: 'users',
+      title: 'Users',
+      type: 'item',
+      url: '/users',
+      icon: 'IconUsers'   
+    },
+    
     {
       id: 'authentication',
       title: 'Authentication',

@@ -107,3 +107,56 @@ exports.getRoles = async (req, res) => {
     });
   }
 };
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        phone: true,
+        created_at: true,
+        user_roles: {
+          select: {
+            roles: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    
+    const formatted = users.map((user) => {
+      const { user_roles, ...rest } = user;
+      const role = user_roles?.[0]?.roles ?? null;
+      return {
+        ...rest,
+        role_id: role?.id ?? null,
+        role_name: role?.name ?? null,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Users fetched successfully',
+      data: formatted,
+    });
+
+  } catch (error) {
+    console.error('Get Users Error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};

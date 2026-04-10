@@ -58,7 +58,7 @@ export default function CreateUserView() {
     try {
       await userService.createUser(data);
       sessionStorage.setItem('userCreated', 'true'); 
-      router.push('/users');
+      router.push('/dashboard/users');
     } catch (error) {
       const msg = error?.response?.data?.message || 'Something went wrong. Please try again.';
       setFormError(msg);

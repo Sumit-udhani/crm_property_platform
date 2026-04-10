@@ -868,6 +868,7 @@ model users {
   phone                                                         String?                 @db.VarChar(30)
   password_hash                                                 String
   is_active                                                     Boolean                 @default(true)
+  suspend_reason                                                String?                 @db.VarChar(255)
   token                                                          String?                 @db.VarChar(255)
   token_expiry                                                  DateTime?               @db.Timestamptz(6)
   last_login_at                                                 DateTime?               @db.Timestamptz(6)

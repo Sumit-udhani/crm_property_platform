@@ -58,7 +58,7 @@ export default function UsersListView() {
         <Button
           variant="contained"
           startIcon={<IconUserPlus size={18} />}
-          onClick={() => router.push('/users/create')}
+          onClick={() => router.push('/dashboard/users/create')}
         >
           Add User
         </Button>

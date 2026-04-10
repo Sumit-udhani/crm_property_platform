@@ -10,7 +10,7 @@ const pages = {
       id: 'users',
       title: 'Users',
       type: 'item',
-      url: '/users',
+      url: '/dashboard/users',
       icon: 'IconUsers'   
     },
     

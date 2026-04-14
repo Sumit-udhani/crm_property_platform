@@ -26,7 +26,7 @@ const userService = {
 },
   updateUserStatus: async (id, payload) => {
    
-    const response = await axiosInstance.patch(`/users/${id}/status`, payload);
+    const response = await axiosInstance.patch(`/admin/users/${id}/status`, payload);
     return response.data;
   },
 };

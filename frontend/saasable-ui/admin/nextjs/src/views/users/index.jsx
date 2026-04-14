@@ -75,30 +75,34 @@ export default function UsersListView() {
     }
   };
 
-  const handleStatusAction = async (action, user) => {
-    if (action === 'suspend') {
-      setSelectedUser(user);
-      setSuspendError('');
-      setSuspendDialog(true);
-      return;
-    }
+const handleStatusAction = async (action, user) => {
+  if (action === 'suspend') {
+    setSelectedUser(user);
+    setSuspendError('');
+    setSuspendDialog(true);
+    return;
+  }
 
-    setActionLoading(true);
-    try {
-      await userService.updateUserStatus(user.id, { action });
-      const toastMap = {
-        deactivate: 'User deactivated successfully',
-        reactivate: 'User reactivated successfully',
-      };
-      enqueueSnackbar(toastMap[action], { variant: 'success' });
-      fetchUsers();
-    } catch (error) {
-      const msg = error?.response?.data?.message || 'Action failed. Please try again.';
-      enqueueSnackbar(msg, { variant: 'error' });
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  setActionLoading(true);
+  try {
+    const res = await userService.updateUserStatus(user.id, { action });
+    const updatedUser = res.data; 
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+    );
+
+    const toastMap = {
+      deactivate: 'User deactivated successfully',
+      reactivate: 'User reactivated successfully',
+    };
+    enqueueSnackbar(toastMap[action], { variant: 'success' });
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Action failed. Please try again.';
+    enqueueSnackbar(msg, { variant: 'error' });
+  } finally {
+    setActionLoading(false);
+  }
+};
 
  const handleDeleteUser = async (userId) => {
   const confirmed = window.confirm(`Are you sure you want to delete this user? This action cannot be undone.`);
@@ -118,25 +122,29 @@ export default function UsersListView() {
   }
 };
   const handleSuspendSubmit = async ({ suspend_reason, suspend_days }) => {
-    setActionLoading(true);
-    try {
-      await userService.updateUserStatus(selectedUser.id, {
-        action: 'suspend',
-        suspend_reason,
-        suspend_days,
-      });
-      enqueueSnackbar('User suspended successfully', { variant: 'success' });
-      setSuspendDialog(false);
-      setSelectedUser(null);
-      fetchUsers();
-    } catch (error) {
-      const msg = error?.response?.data?.message || 'Suspend failed. Please try again.';
-      setSuspendError(msg);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  setActionLoading(true);
+  try {
+    const res = await userService.updateUserStatus(selectedUser.id, {
+      action: 'suspend',
+      suspend_reason,
+      suspend_days,
+    });
+    const updatedUser = res.data;
 
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+    );
+
+    enqueueSnackbar('User suspended successfully', { variant: 'success' });
+    setSuspendDialog(false);
+    setSelectedUser(null);
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Suspend failed. Please try again.';
+    setSuspendError(msg);
+  } finally {
+    setActionLoading(false);
+  }
+};
   const columns = [
     { field: 'id',         headerName: 'ID',        width: 80 },
     { field: 'first_name', headerName: 'First Name', flex: 1 },

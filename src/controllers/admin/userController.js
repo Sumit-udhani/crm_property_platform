@@ -302,7 +302,7 @@ exports.updateUserStatus = async (req, res) => {
       const suspendUntil = new Date();
       suspendUntil.setDate(suspendUntil.getDate() + Number(suspend_days));
 
-      await prisma.users.update({
+    const updatedUser  = await prisma.users.update({
         where: { id: BigInt(id) },
         data: {
           suspend_reason,
@@ -321,11 +321,12 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: `User suspended for ${suspend_days} day(s)`,
+         data: updatedUser,
       });
     }
 
     if (action === "deactivate") {
-      await prisma.users.update({
+     const updatedUser = await prisma.users.update({
         where: { id: BigInt(id) },
         data: {
           is_active:      false,
@@ -338,11 +339,12 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User deactivated successfully",
+        data: updatedUser
       });
     }
 
     if (action === "reactivate") {
-      await prisma.users.update({
+     const updatedUser = await prisma.users.update({
         where: { id: BigInt(id) },
         data: {
           is_active:      true,
@@ -361,6 +363,7 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User reactivated successfully",
+        data: updatedUser
       });
     }
 

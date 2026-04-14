@@ -4,16 +4,14 @@ const { sendEmail } = require("../utils/emailService");
 const reactivatedTemplate = require("../templates/reactivatedTemplate");
 
 
-
-
 cron.schedule("0 0 0 0 0", async () => {
   console.log("Running auto-reactivation cron job...");
 
   try {
     const expiredUsers = await prisma.users.findMany({
       where: {
-        suspended_at:  { not: null },         
-        suspend_until: { lte: new Date() },   
+        suspended_at:  { not: null },
+        suspend_until: { lte: new Date() },
         is_active:     false,
       },
     });
@@ -48,4 +46,6 @@ cron.schedule("0 0 0 0 0", async () => {
   } catch (error) {
     console.error("Auto Reactivate Cron Error:", error);
   }
+}, {
+  timezone: "Asia/Kolkata"
 });

@@ -4,7 +4,7 @@ const { sendEmail } = require("../utils/emailService");
 const reactivatedTemplate = require("../templates/reactivatedTemplate");
 
 
-cron.schedule("0 0 0 0 0", async () => {
+cron.schedule("* * * * *", async () => {
   console.log("Running auto-reactivation cron job...");
 
   try {

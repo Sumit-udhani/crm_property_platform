@@ -74,7 +74,7 @@ export default function CreateUserView() {
         <Button
           variant="text"
           startIcon={<IconArrowLeft size={18} />}
-          onClick={() => router.push('/users')}
+          onClick={() => router.push('/dashboard/users')}
           sx={{ minWidth: 0 }}
         >
           Back

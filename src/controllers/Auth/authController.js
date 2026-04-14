@@ -2,7 +2,7 @@ const prisma = require('../../config/prisma');
 const { generateToken,verifyToken } = require("../../utils/jwt");
 const bcrypt = require('bcrypt');
 
-// ─── LOGIN ───
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -41,13 +41,24 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate token
+    if (!user.is_active && !user.suspended_at) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact support.",
+      });
+    }
+      if (user.suspended_at && user.suspend_until) {
+      return res.status(403).json({
+        success: false,
+        message: `Your account is suspended until ${new Date(user.suspend_until).toDateString()}. Reason: ${user.suspend_reason}`,
+      });
+    }
     const token = generateToken({ userId: user.id.toString() },"24hr");
 
-    // Calculate expiry (24h from now)
+    
     const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    // Store token and expiry in DB
+   
     await prisma.users.update({
       where: { id: user.id },
       data: {

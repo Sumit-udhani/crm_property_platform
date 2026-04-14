@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv').config();
 const cors = require('cors');
 const app = express();
-
+require("./cron/autoReactivate.cron");
 app.use(cors({
   origin: [
     "http://localhost:3000",

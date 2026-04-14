@@ -8,7 +8,7 @@ app.use(cors({
     "http://localhost:3000",
     "http://k8s-default-adminser-4281436428-e0941ea5c9c14f92.elb.ap-south-1.amazonaws.com"
   ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));

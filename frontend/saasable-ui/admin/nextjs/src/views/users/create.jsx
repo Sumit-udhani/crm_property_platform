@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams  } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
 
@@ -22,10 +22,12 @@ import userService from '@/services/user.service';
 
 export default function CreateUserView() {
   const router   = useRouter();
-  const params   = useParams();
-  const { enqueueSnackbar } = useSnackbar();
+const searchParams = useSearchParams();
+const editId = searchParams.get('id');   
+const { enqueueSnackbar } = useSnackbar();
+const isEdit = Boolean(editId);
 
-  const isEdit = Boolean(params?.id);   
+  
 
   const [roles, setRoles]               = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function CreateUserView() {
     const fetchUser = async () => {
       try {
         const res = await userService.getUsers();
-        const user = (res.data || []).find((u) => String(u.id) === String(params.id));
+        const user = (res.data || []).find((u) => String(u.id) === String(editId));
         if (user) {
           reset({
             first_name: user.first_name || '',
@@ -70,7 +72,7 @@ export default function CreateUserView() {
       }
     };
     fetchUser();
-  }, [isEdit, params?.id]);
+  }, [isEdit, editId]);
 
   
   const onSubmit = async (data) => {
@@ -78,7 +80,7 @@ export default function CreateUserView() {
     setFormError('');
     try {
       if (isEdit) {
-        await userService.editUser(params.id, data);
+        await userService.editUser(editId, data);
         sessionStorage.setItem('userUpdated', 'true');
       } else {
         await userService.createUser(data);

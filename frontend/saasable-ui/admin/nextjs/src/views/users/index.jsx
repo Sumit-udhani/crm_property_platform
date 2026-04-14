@@ -14,25 +14,28 @@ import Select from '@mui/material/Select';
 import IconButton from '@mui/material/IconButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { DataGrid } from '@mui/x-data-grid';
-import { IconUserPlus, IconPencil } from '@tabler/icons-react';
+import { IconUserPlus, IconPencil,IconTrash } from '@tabler/icons-react';
 
 import userService from '@/services/user.service';
 import SuspendDialog from '@/components/users/SuspendDialog';  
 
 
 const StatusChip = ({ user }) => {
-  if (user.suspend_reason && user.suspended_at) {
+
+  if (user.suspended_at && user.suspend_reason) {
     return <Chip label="Suspended" color="warning" size="small" />;
   }
-  if (!user.is_active) {
+ 
+  if (user.is_active === false) {
     return <Chip label="Deactivated" color="error" size="small" />;
   }
+
   return <Chip label="Active" color="success" size="small" />;
 };
 
 const getUserStatus = (user) => {
-  if (user.suspend_reason && user.suspended_at) return 'suspended';
-  if (!user.is_active) return 'deactivated';
+  if (user.suspended_at && user.suspend_reason) return 'suspended';
+  if (user.is_active === false) return 'deactivated';
   return 'active';
 };
 
@@ -97,7 +100,23 @@ export default function UsersListView() {
     }
   };
 
+ const handleDeleteUser = async (userId) => {
+  const confirmed = window.confirm(`Are you sure you want to delete this user? This action cannot be undone.`);
   
+  if (!confirmed) return;
+
+  setActionLoading(true);
+  try {
+    await userService.deleteUser(userId);
+    enqueueSnackbar('User deleted successfully', { variant: 'success' });
+    fetchUsers();
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Delete failed. Please try again.';
+    enqueueSnackbar(msg, { variant: 'error' });
+  } finally {
+    setActionLoading(false);
+  }
+};
   const handleSuspendSubmit = async ({ suspend_reason, suspend_days }) => {
     setActionLoading(true);
     try {
@@ -142,11 +161,18 @@ export default function UsersListView() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
               size="small"
-              onClick={() => router.push(`/dashboard/users/edit/${row.id}`)}
+             onClick={() => router.push(`/dashboard/users/create?id=${row.id}`)}
             >
               <IconPencil size={18} />
             </IconButton>
 
+                <IconButton
+              size="small"
+               onClick={() => handleDeleteUser(row.id)}
+              disabled={actionLoading}
+                >
+      <IconTrash size={18} />
+    </IconButton>
             <Select
               size="small"
               displayEmpty

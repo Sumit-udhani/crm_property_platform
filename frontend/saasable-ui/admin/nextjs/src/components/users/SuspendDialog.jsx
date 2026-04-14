@@ -10,6 +10,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Box from '@mui/material/Box';
+import { useState } from 'react';
 
 export default function SuspendDialog({ open, onClose, onSubmit, loading, error, setError }) {
   const [suspendReason, setSuspendReason] = useState('');
@@ -50,7 +51,13 @@ export default function SuspendDialog({ open, onClose, onSubmit, loading, error,
               fullWidth
               type="number"
               placeholder="e.g. 15"
-              value={suspendDays}
+                    inputProps={{min: 0}}
+                            onKeyDown={(e) => {
+                    if (e.key === '-' ||e.key === '+' || e.key === 'e') {
+                    e.preventDefault();
+                    }
+                }}
+                value={suspendDays}
               onChange={(e) => { setSuspendDays(e.target.value); setError(''); }}
             />
           </Box>

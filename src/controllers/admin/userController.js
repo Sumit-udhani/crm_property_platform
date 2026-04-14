@@ -119,6 +119,9 @@ exports.getUsers = async (req, res) => {
         email: true,
         phone: true,
         created_at: true,
+         is_active: true,
+          suspended_at: true,       
+    suspend_reason: true,  
         user_roles: {
           select: {
             roles: {

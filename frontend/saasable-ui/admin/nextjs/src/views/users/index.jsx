@@ -86,7 +86,8 @@ const handleStatusAction = async (action, user) => {
   setActionLoading(true);
   try {
     const res = await userService.updateUserStatus(user.id, { action });
-    const updatedUser = res.data; 
+    console.log(res.data);
+    const updatedUser =  res.data.data; 
     setUsers((prev) =>
       prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
     );
@@ -129,7 +130,7 @@ const handleStatusAction = async (action, user) => {
       suspend_reason,
       suspend_days,
     });
-    const updatedUser = res.data;
+    const updatedUser =  res.data.data;;
 
     setUsers((prev) =>
       prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))

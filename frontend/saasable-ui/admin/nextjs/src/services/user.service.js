@@ -24,11 +24,9 @@ const userService = {
   const response = await axiosInstance.delete(`/admin/users/${id}`);
   return response.data;
 },
-  updateUserStatus: async (id, payload) => {
-   
-    const response = await axiosInstance.patch(`/admin/users/${id}/status`, payload);
-    return response.data;
-  },
+updateUserStatus: async (id, payload) => {
+  return axiosInstance.patch(`/admin/users/${id}/status`, payload);
+},
 };
 
 export default userService;

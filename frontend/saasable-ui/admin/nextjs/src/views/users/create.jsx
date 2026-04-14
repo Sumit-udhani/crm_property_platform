@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
 
@@ -20,44 +20,70 @@ import { IconArrowLeft } from '@tabler/icons-react';
 
 import userService from '@/services/user.service';
 
-
 export default function CreateUserView() {
-  const router = useRouter();
+  const router   = useRouter();
+  const params   = useParams();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [roles, setRoles]           = useState([]);
+  const isEdit = Boolean(params?.id);   
+
+  const [roles, setRoles]               = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [formError, setFormError]   = useState('');
+  const [formError, setFormError]       = useState('');
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm();
 
- useEffect(() => {
-  const fetchRoles = async () => {
-    try {
-      const res = await userService.getRoles();
-      setRoles(res.data || []);
-    } catch {
-      enqueueSnackbar('Failed to load roles', { variant: 'error' });
-    } finally {
-      setRolesLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await userService.getRoles();
+        setRoles(res.data || []);
+      } catch {
+        enqueueSnackbar('Failed to load roles', { variant: 'error' });
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
 
-  fetchRoles();
-}, []);
 
+  useEffect(() => {
+    if (!isEdit) return;
+
+    const fetchUser = async () => {
+      try {
+        const res = await userService.getUsers();
+        const user = (res.data || []).find((u) => String(u.id) === String(params.id));
+        if (user) {
+          reset({
+            first_name: user.first_name || '',
+            last_name:  user.last_name  || '',
+            email:      user.email      || '',
+            phone:      user.phone      || '',
+            role_id:    user.role_id    || '',
+          });
+        }
+      } catch {
+        enqueueSnackbar('Failed to load user details', { variant: 'error' });
+      }
+    };
+    fetchUser();
+  }, [isEdit, params?.id]);
+
+  
   const onSubmit = async (data) => {
     setIsProcessing(true);
     setFormError('');
     try {
-      await userService.createUser(data);
-      sessionStorage.setItem('userCreated', 'true'); 
+      if (isEdit) {
+        await userService.editUser(params.id, data);
+        sessionStorage.setItem('userUpdated', 'true');
+      } else {
+        await userService.createUser(data);
+        sessionStorage.setItem('userCreated', 'true');
+      }
       router.push('/dashboard/users');
     } catch (error) {
       const msg = error?.response?.data?.message || 'Something went wrong. Please try again.';
@@ -79,13 +105,12 @@ export default function CreateUserView() {
         >
           Back
         </Button>
-        <Typography variant="h3">Create User</Typography>
+        <Typography variant="h3">{isEdit ? 'Edit User' : 'Create User'}</Typography>
       </Box>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack gap={2.5}>
 
-          {/* First Name */}
           <Box>
             <InputLabel required>First Name</InputLabel>
             <OutlinedInput
@@ -97,7 +122,6 @@ export default function CreateUserView() {
             {errors.first_name && <FormHelperText error>{errors.first_name.message}</FormHelperText>}
           </Box>
 
-          {/* Last Name */}
           <Box>
             <InputLabel>Last Name</InputLabel>
             <OutlinedInput
@@ -107,7 +131,6 @@ export default function CreateUserView() {
             />
           </Box>
 
-          {/* Email */}
           <Box>
             <InputLabel required>Email</InputLabel>
             <OutlinedInput
@@ -118,11 +141,12 @@ export default function CreateUserView() {
               placeholder="Enter email"
               fullWidth
               error={Boolean(errors.email)}
+              
+              disabled={isEdit}
             />
             {errors.email && <FormHelperText error>{errors.email.message}</FormHelperText>}
           </Box>
 
-          {/* Phone */}
           <Box>
             <InputLabel>Phone</InputLabel>
             <OutlinedInput
@@ -132,7 +156,6 @@ export default function CreateUserView() {
             />
           </Box>
 
-          {/* Role */}
           <Box>
             <InputLabel required>Role</InputLabel>
             <Controller
@@ -168,7 +191,6 @@ export default function CreateUserView() {
             </Alert>
           )}
 
-          {/* Submit */}
           <Button
             type="submit"
             variant="contained"
@@ -176,7 +198,7 @@ export default function CreateUserView() {
             endIcon={isProcessing && <CircularProgress color="secondary" size={16} />}
             sx={{ alignSelf: 'flex-start', minWidth: 160 }}
           >
-            Create User
+            {isEdit ? 'Update User' : 'Create User'}
           </Button>
 
         </Stack>

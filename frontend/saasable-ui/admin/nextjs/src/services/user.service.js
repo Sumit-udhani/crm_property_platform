@@ -16,6 +16,15 @@ const userService = {
     const response = await axiosInstance.get('/admin/roles');
     return response.data;
   },
+    editUser: async (id, payload) => {
+    const response = await axiosInstance.put(`/admin/users/${id}`, payload);
+    return response.data;
+  },
+  updateUserStatus: async (id, payload) => {
+   
+    const response = await axiosInstance.patch(`/users/${id}/status`, payload);
+    return response.data;
+  },
 };
 
 export default userService;

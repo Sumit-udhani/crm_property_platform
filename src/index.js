@@ -20,9 +20,12 @@ BigInt.prototype.toJSON = function() {
 }
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
+const roleRoutes = require("./routes/role.routes");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/admin", roleRoutes);
+
 app.get("/",(req,res)=>{
     res.send("Hello this is Crmssss")
 })

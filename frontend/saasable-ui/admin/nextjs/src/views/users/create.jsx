@@ -64,15 +64,16 @@ const isEdit = Boolean(editId);
             last_name:  user.last_name  || '',
             email:      user.email      || '',
             phone:      user.phone      || '',
-            role_id:    user.role_id    || '',
+              role_id:    user.role_id ? String(user.role_id) : '',
           });
+         
         }
       } catch {
         enqueueSnackbar('Failed to load user details', { variant: 'error' });
       }
     };
     fetchUser();
-  }, [isEdit, editId]);
+  }, [isEdit, editId,roles]);
 
   
   const onSubmit = async (data) => {
@@ -163,10 +164,12 @@ const isEdit = Boolean(editId);
             <Controller
               name="role_id"
               control={control}
+               defaultValue=""
               rules={{ required: 'Role is required' }}
               render={({ field }) => (
                 <Select
                   {...field}
+                   value={field.value || ''} 
                   fullWidth
                   displayEmpty
                   disabled={rolesLoading}
@@ -177,9 +180,9 @@ const isEdit = Boolean(editId);
                     {rolesLoading ? 'Loading roles...' : 'Select a role'}
                   </MenuItem>
                   {roles.map((role) => (
-                    <MenuItem key={role.id} value={role.id}>
-                      {role.name}
-                    </MenuItem>
+                    <MenuItem key={role.id} value={String(role.id)}>
+                    {role.name}
+                   </MenuItem>
                   ))}
                 </Select>
               )}

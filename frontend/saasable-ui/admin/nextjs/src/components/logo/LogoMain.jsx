@@ -18,7 +18,7 @@ export default function LogoMain() {
     <CardMedia src={logoMainPath} component="img" alt="logo" sx={{ width: { xs: 112, lg: 140 } }} />
   ) : (
     <Box sx={{ width: { xs: 112, lg: 140 }, height: { xs: 22, lg: 26 } }}>
-      <svg viewBox="0 0 140 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 140 27" fill="none" xmlns="">
         <path
           fillRule="evenodd"
           clipRule="evenodd"

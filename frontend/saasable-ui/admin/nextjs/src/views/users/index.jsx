@@ -15,23 +15,46 @@ import IconButton from '@mui/material/IconButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { DataGrid } from '@mui/x-data-grid';
 import { IconUserPlus, IconPencil,IconTrash } from '@tabler/icons-react';
-
+import './custom.css'
 import userService from '@/services/user.service';
 import SuspendDialog from '@/components/users/SuspendDialog';  
 
 
 const StatusChip = ({ user }) => {
+  let label = 'Active';
+  let bgColor = '#E6F4EA';
+  let textColor = '#1B5E20';
 
   if (user.suspended_at && user.suspend_reason) {
-    return <Chip label="Suspended" color="warning" size="small" />;
+    label = 'Suspended';
+    bgColor = '#FFF4E5';
+    textColor = '#B26A00';
+  } else if (user.is_active === false) {
+    label = 'Deactivated';
+    bgColor = '#FDECEA';
+    textColor = '#B71C1C';
   }
- 
-  if (user.is_active === false) {
-    return <Chip label="Deactivated" color="error" size="small" />;
-  }
-
-  return <Chip label="Active" color="success" size="small" />;
-};
+  return (
+    <Box
+      sx={{
+        px: 1.8,
+        py: 0.4,
+        borderRadius: '99px', 
+        fontSize: 12,
+        fontWeight: 500,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: bgColor,
+        color: textColor,
+        minWidth: 100,
+      }}
+      className="mui-pjwibc"
+    >
+      {label}
+    </Box>
+  );
+}
 
 const getUserStatus = (user) => {
   if (user.suspended_at && user.suspend_reason) return 'suspended';
@@ -174,74 +197,113 @@ const handleStatusAction = async (action, user) => {
             >
               <IconPencil size={18} />
             </IconButton>
+{row.role_name !== 'SUPER ADMIN' && (
+  <IconButton
+    size="small"
+    onClick={() => handleDeleteUser(row.id)}
+    disabled={actionLoading}
+  >
+    <IconTrash size={18} />
+  </IconButton>
+)}
+          <Select
+  size="small"
+  displayEmpty
+  value=""
+  onChange={(e) => handleStatusAction(e.target.value, row)}
+  input={<OutlinedInput sx={{ fontSize: 13 }} />}
+  sx={{ minWidth: 130 }}
+  disabled={actionLoading}
+>
+  <MenuItem value="" disabled>Status</MenuItem>
 
-                <IconButton
-              size="small"
-               onClick={() => handleDeleteUser(row.id)}
-              disabled={actionLoading}
-                >
-      <IconTrash size={18} />
-    </IconButton>
-            <Select
-              size="small"
-              displayEmpty
-              value=""
-              onChange={(e) => handleStatusAction(e.target.value, row)}
-              input={<OutlinedInput sx={{ fontSize: 13 }} />}
-              sx={{ minWidth: 130 }}
-              disabled={actionLoading}
-            >
-              <MenuItem value="" disabled>Change Status</MenuItem>
-              {status === 'active' && <MenuItem value="suspend">Suspend</MenuItem>}
-              {status === 'active' && <MenuItem value="deactivate">Deactivate</MenuItem>}
-              {(status === 'suspended' || status === 'deactivated') && (
-                <MenuItem value="reactivate">Activate</MenuItem>
-              )}
-            </Select>
+  
+  {status === 'active' && [
+    <MenuItem key="suspend" value="suspend">Suspend</MenuItem>,
+    <MenuItem key="deactivate" value="deactivate">Deactivate</MenuItem>,
+  ]}
+
+  
+  {status === 'suspended' && [
+    <MenuItem key="reactivate" value="reactivate">Activate</MenuItem>,
+    <MenuItem key="deactivate" value="deactivate">Deactivate</MenuItem>,
+  ]}
+
+ 
+  {status === 'deactivated' && [
+    <MenuItem key="reactivate" value="reactivate">Activate</MenuItem>,
+    <MenuItem key="suspend" value="suspend">Suspend</MenuItem>,
+  ]}
+</Select>
           </Box>
         );
       },
     },
   ];
 
-  return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h3">Users</Typography>
-        <Button
-          variant="contained"
-          startIcon={<IconUserPlus size={18} />}
-          onClick={() => router.push('/dashboard/users/create')}
-        >
-          Add User
-        </Button>
-      </Box>
+return (
+  <Box sx={{ width: '100%', px: 2, ml: '0px !important' }}> 
+    
+    
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: 3,
+         ml: '0px !important'
+      }}
+    >
+      <Typography variant="h3">Users</Typography>
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
+      <Button
+        variant="contained"
+        startIcon={<IconUserPlus size={18} />}
+        onClick={() => router.push('/dashboard/users/create')}
+      >
+        Add User
+      </Button>
+    </Box>
+
+    {/* TABLE */}
+    {loading ? (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+        <CircularProgress />
+      </Box>
+    ) : (
+      <Box sx={{ width: '100%', overflowX: 'auto' }}> {/* ✅ HORIZONTAL SCROLL */}
         <DataGrid
           rows={users}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
           disableRowSelectionOnClick
           autoHeight
-          sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+          rowHeight={60} 
+          sx={{
+            minWidth: 1000,
+            width: '100%',
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+          }}
         />
-      )}
+      </Box>
+    )}
 
-    
-      <SuspendDialog
-        open={suspendDialog}
-        onClose={() => { setSuspendDialog(false); setSelectedUser(null); }}
-        onSubmit={handleSuspendSubmit}
-        loading={actionLoading}
-        error={suspendError}
-        setError={setSuspendError}
-      />
-    </Box>
-  );
+    {/* DIALOG */}
+    <SuspendDialog
+      open={suspendDialog}
+      onClose={() => {
+        setSuspendDialog(false);
+        setSelectedUser(null);
+      }}
+      onSubmit={handleSuspendSubmit}
+      loading={actionLoading}
+      error={suspendError}
+      setError={setSuspendError}
+    />
+  </Box>
+);
 }

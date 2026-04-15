@@ -87,28 +87,28 @@ exports.createUser = async (req, res) => {
     });
   }
 };
-exports.getRoles = async (req, res) => {
-  try {
-    const roles = await prisma.roles.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+// exports.getRoles = async (req, res) => {
+//   try {
+//     const roles = await prisma.roles.findMany({
+//       select: {
+//         id: true,
+//         name: true,
+//       },
+//     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Roles fetched successfully",
-      data: roles,
-    });
+//     return res.status(200).json({
+//       success: true,
+//       message: "Roles fetched successfully",
+//       data: roles,
+//     });
 
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching roles",
-    });
-  }
-};
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Error fetching roles",
+//     });
+//   }
+// };
 exports.getUsers = async (req, res) => {
   try {
     const users = await prisma.users.findMany({

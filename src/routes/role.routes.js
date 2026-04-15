@@ -9,3 +9,4 @@ router.get  ('/roles',     authMiddleware, isSuperAdmin, getRoles);
 router.post  ('/roles',     authMiddleware, isSuperAdmin, createRole);
 router.put   ('/roles/:id', authMiddleware, isSuperAdmin, editRole);
 router.delete('/roles/:id', authMiddleware, isSuperAdmin, deleteRole);
+module.exports = router;

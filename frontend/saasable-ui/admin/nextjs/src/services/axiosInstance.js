@@ -29,6 +29,7 @@ axiosInstance.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
+       document.cookie = 'token=; Max-Age=0; path=/';
       window.location.href = '/login'
     }
 

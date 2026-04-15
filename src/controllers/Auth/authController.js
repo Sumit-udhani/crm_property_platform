@@ -54,10 +54,9 @@ exports.login = async (req, res) => {
         message: `Your account is suspended until ${new Date(user.suspend_until).toDateString()}. Reason: ${user.suspend_reason}`,
       });
     }
-    const token = generateToken({ userId: user.id.toString() },"24hr");
+   const token = generateToken({ userId: user.id.toString() }, "1m");
 
-    
-    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+const tokenExpires = new Date(Date.now() + 1 * 60 * 1000); 
 
    
     await prisma.users.update({

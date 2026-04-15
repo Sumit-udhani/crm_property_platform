@@ -135,7 +135,7 @@ document.cookie = `token=${response.data.token}; path=/; max-age=86400; domain=$
               <Link
                 underline="hover"
                 variant="caption"
-                href="#"
+                href="/forgot-password"
                 textAlign="right"
                 sx={{ '&:hover': { color: 'primary.dark' }, mt: 0.75 }}
               >

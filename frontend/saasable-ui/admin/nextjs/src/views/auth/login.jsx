@@ -24,7 +24,7 @@ export default function Login() {
           </Typography>
         </Stack>
 
-        {/* Social login buttons */}
+       
         <AuthSocial />
 
         <Divider sx={{ my: { xs: 4, sm: 5 } }}>

@@ -1,7 +1,8 @@
 const prisma = require('../../config/prisma');
 const { generateToken,verifyToken } = require("../../utils/jwt");
 const bcrypt = require('bcrypt');
-
+const { sendEmail } = require("../../utils/emailService");
+const forgotPasswordTemplate = require('../../templates/forgotPasswordTemplate')
 
 exports.login = async (req, res) => {
   try {
@@ -86,12 +87,73 @@ exports.login = async (req, res) => {
   }
 };
 
-// ─── LOGOUT ───
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { email },
+    });
+
+    
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email is registered, you will receive a reset link shortly.",
+      });
+    }
+
+    
+    if (!user.password_hash) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email is registered, you will receive a reset link shortly.",
+      });
+    }
+
+    const token = generateToken(
+      {
+        userId: user.id,
+        email:  user.email,
+        type:   "SET_PASSWORD",
+      },
+      "15m"
+    );
+
+    const link = `${process.env.FRONTEND_URL}/set-password?token=${token}`;
+
+    await sendEmail(
+      user.email,
+      "Reset Your Password",
+      forgotPasswordTemplate(user.first_name, link)
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "If this email is registered, you will receive a reset link shortly.",
+    });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 exports.logout = async (req, res) => {
   try {
-    const userId = BigInt(req.user.userId) // convert back to BigInt for DB
+    const userId = BigInt(req.user.userId) 
 
-    // Clear token from DB
+    
     await prisma.users.update({
       where: { id: userId },
       data: {
@@ -165,13 +227,7 @@ exports.setPassword = async (req, res) => {
     }
 
    
-    if (user.password_hash) {
-      return res.status(400).json({
-        success: false,
-        message: "Password already set. Please login.",
-      });
-    }
-
+   
     
     const hashedPassword = await bcrypt.hash(password, 10);
 

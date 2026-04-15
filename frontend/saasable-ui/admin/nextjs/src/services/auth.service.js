@@ -25,7 +25,10 @@ logout: async () => {
   return response.data
 },
 
-
+forgotPassword: async (email) => {
+  const response = await axiosInstance.post('/auth/forgot-password', { email });
+  return response.data;
+},
 setPassword: async (token, password, confirmPassword) => {
     const response = await axiosInstance.post('/auth/set-password', {
       token,

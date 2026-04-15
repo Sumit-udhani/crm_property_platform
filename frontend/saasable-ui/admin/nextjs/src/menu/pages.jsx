@@ -13,7 +13,13 @@ const pages = {
       url: '/dashboard/users',
       icon: 'IconUsers'   
     },
-    
+    {
+  id: 'roles',
+  title: 'Roles',
+  type: 'item',
+  url: '/dashboard/roles',
+  icon: 'IconShield', 
+},
     {
       id: 'authentication',
       title: 'Authentication',

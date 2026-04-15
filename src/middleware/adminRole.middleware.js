@@ -9,7 +9,7 @@ exports.isSuperAdmin = async (req, res, next) => {
       include: { roles: true },
     });
 
-    if (userRole?.roles?.name !== "SUPER ADMIN" && userRole?.roles?.name !== "Admin") {
+    if (userRole?.roles?.name !== "SUPER ADMIN" && userRole?.roles?.name !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Access denied. Super Admin & Admin only.",

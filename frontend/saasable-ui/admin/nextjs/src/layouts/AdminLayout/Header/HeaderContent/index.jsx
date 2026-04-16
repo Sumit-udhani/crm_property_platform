@@ -16,12 +16,12 @@ export default function HeaderContent() {
     <>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: { xs: 'flex-end', md: 'space-between' }, gap: 2, width: 1 }}>
         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Breadcrumbs />
+          {/* <Breadcrumbs /> */}
         </Box>
         <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
-          <SearchBar />
-          <ThemeModeSwitcher />
-          <Notification />
+          {/* <SearchBar /> */}
+          {/* <ThemeModeSwitcher />
+          <Notification /> */}
           <Profile />
         </Stack>
       </Stack>

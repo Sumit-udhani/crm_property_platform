@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 // @project
 import { NextLink } from '@/components/routes';
 import AuthLogin from '@/sections/auth/AuthLogin';
-import AuthSocial from '@/sections/auth/AuthSocial';
+// import AuthSocial from '@/sections/auth/AuthSocial';
 import Copyright from '@/sections/auth/Copyright';
 
 /***************************  AUTH - LOGIN  ***************************/
@@ -20,23 +20,23 @@ export default function Login() {
         <Stack sx={{ gap: { xs: 1, sm: 1.5 }, textAlign: 'center', mb: { xs: 3, sm: 8 } }}>
           <Typography variant="h1">Sign In</Typography>
           <Typography variant="body1" color="text.secondary">
-            Welcome back! Select the method of login.
+            Welcome back! login to continue.
           </Typography>
         </Stack>
 
        
-        <AuthSocial />
+        {/* <AuthSocial /> */}
 
-        <Divider sx={{ my: { xs: 4, sm: 5 } }}>
+        {/* <Divider sx={{ my: { xs: 4, sm: 5 } }}>
           <Typography variant="body2" color="text.secondary">
             or continue with email
           </Typography>
-        </Divider>
+        </Divider> */}
 
         {/* Login form */}
         <AuthLogin />
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: { xs: 2, sm: 3 } }}>
+        {/* <Typography variant="body2" color="text.secondary" sx={{ mt: { xs: 2, sm: 3 } }}>
           Don’t have an account?{' '}
           <Link
             component={NextLink}
@@ -47,7 +47,7 @@ export default function Login() {
           >
             Sign Up
           </Link>
-        </Typography>
+        </Typography> */}
       </Box>
 
       {/* Copyright section*/}

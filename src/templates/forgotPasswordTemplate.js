@@ -115,7 +115,7 @@ const forgotPasswordTemplate = (firstName, resetLink) => `
 
     <div class="footer">
       This is an automated message — please do not reply to this email.<br/>
-      © ${new Date().getFullYear()} Your Company. All rights reserved.
+      © ${new Date().getFullYear()} PenguinPeak. All rights reserved.
     </div>
 
   </div>

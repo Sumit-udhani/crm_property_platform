@@ -13,7 +13,7 @@ import { NextLink } from '@/components/routes';
 
 export default function Copyright() {
   const copyrightSX = { display: { xs: 'none', sm: 'flex' } };
-
+ const date = new Date().getFullYear();
   const linkProps = {
     component: NextLink,
     variant: 'caption',
@@ -27,16 +27,12 @@ export default function Copyright() {
     <Stack sx={{ gap: 1, width: 'fit-content', mx: 'auto' }}>
       <Stack direction="row" sx={{ justifyContent: 'center', gap: { xs: 1, sm: 1.5 }, textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary" sx={copyrightSX}>
-          © 2024 {branding.brandName}
+          © {date} {branding.brandName}
         </Typography>
         <Divider orientation="vertical" flexItem sx={copyrightSX} />
-        <Link {...linkProps} href="https://saasable.io/privacy-policy">
-          Privacy Policy
-        </Link>
+       
         <Divider orientation="vertical" flexItem />
-        <Link {...linkProps} href="https://mui.com/store/terms/">
-          Terms & Conditions
-        </Link>
+       
       </Stack>
 
       <Box sx={{ textAlign: 'center', display: { xs: 'block', sm: 'none' } }}>

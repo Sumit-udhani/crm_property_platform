@@ -15,15 +15,15 @@ import MainCard from '@/components/MainCard';
 import { AvatarSize } from '@/enum';
 
 // @assets
-import { IconBolt } from '@tabler/icons-react';
+
 
 /***************************  NAVIGATION CARD - DATA  ***************************/
 
-const data = {
-  title: 'Upgrade Your Experience',
-  description: 'Take your experience to the next level with our premium offering. Buy now and enjoy more!',
-  icon: <IconBolt size={16} />
-};
+// const data = {
+//   title: 'Upgrade Your Experience',
+//   description: 'Take your experience to the next level with our premium offering. Buy now and enjoy more!',
+//   icon: <IconBolt size={16} />
+// };
 
 /***************************  NAVIGATION CARD - CONTENT  ***************************/
 
@@ -59,11 +59,11 @@ function CardContent({ title, description, icon }) {
 /***************************  DRAWER CONTENT - NAVIGATION CARD  ***************************/
 
 export default function NavCard() {
-  return (
-    <MainCard sx={{ p: 1.5, bgcolor: 'grey.50', boxShadow: 'none', mb: 3 }}>
-      <CardContent title={data.title} description={data.description} icon={data.icon} />
-    </MainCard>
-  );
+  // return (
+  //   // <MainCard sx={{ p: 1.5, bgcolor: 'grey.50', boxShadow: 'none', mb: 3 }}>
+  //   //   <CardContent title={data.title} description={data.description} icon={data.icon} />
+  //   // </MainCard>
+  // );
 }
 
 CardContent.propTypes = { title: PropTypes.string, description: PropTypes.string, icon: PropTypes.any };

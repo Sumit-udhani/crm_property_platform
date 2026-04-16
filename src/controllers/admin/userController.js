@@ -324,7 +324,7 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: `User suspended for ${suspend_days} day(s)`,
-         data: updatedUser,
+         data: { ...updatedUser, id: updatedUser.id.toString() }
       });
     }
 
@@ -342,7 +342,7 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User deactivated successfully",
-        data: updatedUser
+         data: { ...updatedUser, id: updatedUser.id.toString() }
       });
     }
 
@@ -366,7 +366,7 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User reactivated successfully",
-        data: updatedUser
+        data: { ...updatedUser, id: updatedUser.id.toString() }
       });
     }
 

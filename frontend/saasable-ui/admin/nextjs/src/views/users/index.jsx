@@ -18,7 +18,7 @@ import { IconUserPlus, IconPencil,IconTrash } from '@tabler/icons-react';
 import './custom.css'
 import userService from '@/services/user.service';
 import SuspendDialog from '@/components/users/SuspendDialog';  
-
+import Tooltip from '@mui/material/Tooltip';
 
 const StatusChip = ({ user }) => {
   const status = user.computedStatus || 'active';
@@ -201,7 +201,24 @@ const handleStatusAction = async (action, user) => {
     { field: 'id',         headerName: 'ID',        width: 80 },
     { field: 'first_name', headerName: 'First Name', flex: 1 },
     { field: 'last_name',  headerName: 'Last Name',  flex: 1 },
-    { field: 'email',      headerName: 'Email',      flex: 1.5 },
+    {
+  field: 'email',
+  headerName: 'Email',
+  flex: 1.5,
+  renderCell: (params) => (
+    <Tooltip title={params.value || ''}>
+      <span style={{
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        width: '100%',
+        display: 'block'
+      }}>
+        {params.value}
+      </span>
+    </Tooltip>
+  )
+},
     { field: 'phone',      headerName: 'Phone',      flex: 1 },
     { field: 'role_name',  headerName: 'Role',       flex: 1 },
     {
@@ -320,19 +337,23 @@ return (
   autoHeight
   rowHeight={56}
   sx={{
-    minWidth: 1000,
-    width: '100%',
-    bgcolor: 'background.paper',
-    borderRadius: 2,
-    '& .MuiDataGrid-cell': {
-      display: 'flex',
-      alignItems: 'center',   
-      overflow: 'visible',    
-    },
-    '& .MuiDataGrid-row': {
-      overflow: 'visible',    
-    },
-  }}
+  minWidth: 1000,
+  width: '100%',
+  bgcolor: 'background.paper',
+  borderRadius: 2,
+
+  '& .MuiDataGrid-cell': {
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',           // ✅ FIX
+    whiteSpace: 'nowrap',         // ✅ prevent wrap
+    textOverflow: 'ellipsis',     // ✅ add ...
+  },
+
+  '& .MuiDataGrid-row': {
+    overflow: 'hidden',           // ✅ FIX
+  },
+}}
 />
       </Box>
     )}

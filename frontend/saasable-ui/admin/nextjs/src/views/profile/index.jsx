@@ -186,10 +186,20 @@ const router = useRouter();
           <Box>
             <InputLabel>Phone</InputLabel>
             <OutlinedInput
-              {...register('phone')}
-              fullWidth
-              placeholder="Enter phone number"
-            />
+  {...register('phone', {
+    pattern: {
+      value: /^[0-9]{10}$/,
+      message: 'Phone must be exactly 10 digits (numbers only)',
+    }
+  })}
+  fullWidth
+  placeholder="Enter phone number"
+  error={Boolean(errors.phone)}
+/>
+
+{errors.phone && (
+  <FormHelperText error>{errors.phone.message}</FormHelperText>
+)}
           </Box>
 
           {/* Read-only fields */}

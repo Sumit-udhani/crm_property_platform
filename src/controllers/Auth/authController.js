@@ -319,10 +319,18 @@ exports.updateMe = async (req, res) => {
     }
 
     const updateData = {};
-    if (first_name) updateData.first_name = first_name;
-    if (last_name)  updateData.last_name  = last_name;
-    if (phone)      updateData.phone      = phone;
-
+    if (phone !== undefined && phone !== null && phone !== '') {
+  const phoneStr = String(phone);
+  if (!/^[0-9]{10}$/.test(phoneStr)) {
+    return res.status(400).json({
+      success: false,
+      message: "Phone number must be exactly 10 digits and contain only numbers"
+    });
+  }
+}
+if (first_name !== undefined) updateData.first_name = first_name;
+if (last_name  !== undefined) updateData.last_name  = last_name ?? null;
+if (phone      !== undefined) updateData.phone      = phone      ?? null;
    
     if (req.file) {
       

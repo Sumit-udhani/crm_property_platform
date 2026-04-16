@@ -70,23 +70,33 @@ export default function RolesListView() {
       headerName: 'Actions',
       width: 120,
       sortable: false,
-      renderCell: ({ row }) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => router.push(`/dashboard/roles/create?id=${row.id}`)}
-          >
-            <IconPencil size={18} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleDelete(row.id)}
-            disabled={actionLoading}
-          >
-            <IconTrash size={18} />
-          </IconButton>
-        </Box>
-      ),
+     renderCell: ({ row }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center', // or 'flex-start' if you prefer left
+      gap: 1,
+      height: '100%',   // ✅ IMPORTANT
+      width: '100%',    // ✅ IMPORTANT
+    }}
+  >
+    <IconButton
+      size="small"
+      onClick={() => router.push(`/dashboard/roles/create?id=${row.id}`)}
+    >
+      <IconPencil size={18} />
+    </IconButton>
+
+    <IconButton
+      size="small"
+      onClick={() => handleDelete(row.id)}
+      disabled={actionLoading}
+    >
+      <IconTrash size={18} />
+    </IconButton>
+  </Box>
+),
     },
   ];
 

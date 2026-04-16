@@ -100,7 +100,7 @@ jobs:
 
       - name: Push Prisma Schema
         run: |
-          kubectl exec deployment/crm-property-platform -- npx prisma db push --skip-generate
+         kubectl exec deployment/crm-property-platform -- npx prisma db push
 
       # 🌱 Seed Database (runs after pod is ready)
       - name: Seed Database

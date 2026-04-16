@@ -256,56 +256,108 @@ exports.setPassword = async (req, res) => {
 };
 exports.getMe = async (req, res) => {
   try {
-    const userId = BigInt(req.user.userId)
+    const userId = BigInt(req.user.userId);
 
     const user = await prisma.users.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        first_name: true,
-        last_name: true,
-        email: true,
-        phone: true,
-        is_active: true,
+        id:            true,
+        first_name:    true,
+        last_name:     true,
+        email:         true,
+        phone:         true,
+        is_active:     true,
+        profile_image: true,
         user_roles: {
           select: {
-            roles: {
-              select: {
-                name: true
-              }
-            }
+            roles: { select: { name: true } }
           }
         }
       }
-    })
+    });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      })
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     return res.status(200).json({
       success: true,
       message: "User fetched successfully",
       data: {
-        id: user.id.toString(),
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        role_name: user.user_roles[0]?.roles?.name || null
+        id:            user.id.toString(),
+        first_name:    user.first_name,
+        last_name:     user.last_name,
+        email:         user.email,
+        phone:         user.phone,
+        profile_image: user.profile_image
+          ? `${process.env.BASE_URL}/${user.profile_image}`
+          : null,
+        role_name:     user.user_roles[0]?.roles?.name || null,
       }
-    })
+    });
 
   } catch (error) {
-    console.error("Get Me Error:", error)
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    })
+    console.error("Get Me Error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
   }
-}
+};
 
+exports.updateMe = async (req, res) => {
+  try {
+    const userId = BigInt(req.user.userId);
+    const { first_name, last_name, phone } = req.body;
+
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: {
+        user_roles: { include: { roles: true } }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const updateData = {};
+    if (first_name) updateData.first_name = first_name;
+    if (last_name)  updateData.last_name  = last_name;
+    if (phone)      updateData.phone      = phone;
+
+   
+    if (req.file) {
+      
+      if (user.profile_image) {
+        const fs   = require('fs');
+        const path = require('path');
+        const oldPath = path.join(__dirname, '../../', user.profile_image);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      }
+      updateData.profile_image = req.file.path.replace(/\\/g, '/'); 
+    }
+
+    const updated = await prisma.users.update({
+      where: { id: userId },
+      data:  updateData,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        id:            updated.id.toString(),
+        first_name:    updated.first_name,
+        last_name:     updated.last_name,
+        email:         updated.email,
+        phone:         updated.phone,
+        profile_image: updated.profile_image
+          ? `${process.env.BASE_URL}/${updated.profile_image}`
+          : null,
+        role_name:     user.user_roles[0]?.roles?.name || null,
+      }
+    });
+
+  } catch (error) {
+    console.error("Update Me Error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+  }
+};

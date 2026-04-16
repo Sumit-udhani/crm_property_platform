@@ -82,10 +82,13 @@ const router = useRouter()
         if (response.success) {
           const { first_name, last_name, role_name } = response.data
           setProfileData({
-            avatar: { src: '/assets/images/users/avatar-1.png', size: AvatarSize.XS },
-            title: `${first_name} ${last_name || ''}`.trim(),
+            avatar: {
+              src:  response.data.profile_image || '/assets/images/users/avatar-1.png',
+              size: AvatarSize.XS
+            },
+            title:   `${first_name} ${last_name || ''}`.trim(),
             caption: role_name || ''
-          })
+          });
         }
       } catch (error) {
         console.error('Failed to fetch user:', error)
@@ -211,12 +214,15 @@ const logoutAccount = async () => {
                         )}
                       </Popper>
                     </ListItemButton>
-                    <ListItemButton href="#" sx={{ ...buttonStyle, my: 0.5 }}>
-                      <ListItemIcon>
-                        <IconSettings size={16} />
-                      </ListItemIcon>
-                      <ListItemText primary="Settings" />
-                    </ListItemButton>
+                   <ListItemButton
+   sx={{ ...buttonStyle, my: 0.5 }}
+  onClick={() => { setAnchorEl(null); router.push('/dashboard/profile'); }}
+>
+  <ListItemIcon>
+    <IconSettings size={16} />
+  </ListItemIcon>
+  <ListItemText primary="Settings" />
+</ListItemButton>
                     <ListItem disablePadding>
                       <Button
                         fullWidth

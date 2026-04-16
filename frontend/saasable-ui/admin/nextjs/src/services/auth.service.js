@@ -40,7 +40,13 @@ setPassword: async (token, password, confirmPassword) => {
   getMe: async () => {
   const response = await axiosInstance.get('/auth/me')
   return response.data
-}
+},
+updateMe: async (formData) => {
+  const response = await axiosInstance.put('/auth/me', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+},
 }
 
 export default authService

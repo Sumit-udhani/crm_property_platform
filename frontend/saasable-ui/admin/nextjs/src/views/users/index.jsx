@@ -21,25 +21,22 @@ import SuspendDialog from '@/components/users/SuspendDialog';
 
 
 const StatusChip = ({ user }) => {
-  let label = 'Active';
-  let bgColor = '#E6F4EA';
-  let textColor = '#1B5E20';
+  const status = user.computedStatus || 'active';
 
-  if (user.suspended_at && user.suspend_reason) {
-    label = 'Suspended';
-    bgColor = '#FFF4E5';
-    textColor = '#B26A00';
-  } else if (user.is_active === false) {
-    label = 'Deactivated';
-    bgColor = '#FDECEA';
-    textColor = '#B71C1C';
-  }
+  const map = {
+    suspended:   { label: 'Suspended',   bgColor: '#FFF4E5', textColor: '#B26A00' },
+    deactivated: { label: 'Deactivated', bgColor: '#FDECEA', textColor: '#B71C1C' },
+    active:      { label: 'Active',      bgColor: '#E6F4EA', textColor: '#1B5E20' },
+  };
+
+  const { label, bgColor, textColor } = map[status];
+
   return (
     <Box
       sx={{
         px: 1.8,
         py: 0.4,
-        borderRadius: '99px', 
+        borderRadius: '99px',
         fontSize: 12,
         fontWeight: 500,
         display: 'inline-flex',
@@ -48,20 +45,16 @@ const StatusChip = ({ user }) => {
         backgroundColor: bgColor,
         color: textColor,
         minWidth: 100,
+        height: 38
       }}
-      className="mui-pjwibc"
-    >
+      
+     >
       {label}
     </Box>
   );
-}
-
-const getUserStatus = (user) => {
-  if (user.suspended_at && user.suspend_reason) return 'suspended';
-  if (user.is_active === false) return 'deactivated';
-  return 'active';
 };
 
+const getUserStatus = (user) => user.computedStatus || 'active';
 export default function UsersListView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
@@ -87,16 +80,25 @@ export default function UsersListView() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await userService.getUsers();
-      setUsers(res.data || []);
-    } catch {
-      enqueueSnackbar('Failed to load users', { variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // In fetchUsers — add computed status field
+const fetchUsers = async () => {
+  try {
+    const res = await userService.getUsers();
+    const usersWithStatus = (res.data || []).map((u) => ({
+      ...u,
+      computedStatus: u.suspended_at && u.suspend_reason
+        ? 'suspended'
+        : u.is_active === false
+        ? 'deactivated'
+        : 'active',
+    }));
+    setUsers(usersWithStatus);
+  } catch {
+    enqueueSnackbar('Failed to load users', { variant: 'error' });
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleStatusAction = async (action, user) => {
   if (action === 'suspend') {
@@ -111,9 +113,23 @@ const handleStatusAction = async (action, user) => {
     const res = await userService.updateUserStatus(user.id, { action });
     console.log(res.data);
     const updatedUser =  res.data.data; 
-    setUsers((prev) =>
-      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
-    );
+  setUsers((prev) =>
+  prev.map((u) =>
+    String(u.id) === String(updatedUser.id)
+      ? {
+          ...u,
+          ...updatedUser,
+          computedStatus: updatedUser.suspended_at && updatedUser.suspend_reason
+            ? 'suspended'
+            : updatedUser.is_active === false
+            ? 'deactivated'
+            : 'active',
+          _updatedAt: Date.now(),
+        }
+      : u
+  )
+);
+
 
     const toastMap = {
       deactivate: 'User deactivated successfully',
@@ -155,10 +171,22 @@ const handleStatusAction = async (action, user) => {
     });
     const updatedUser =  res.data.data;;
 
-    setUsers((prev) =>
-      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
-    );
-
+   setUsers((prev) =>
+  prev.map((u) =>
+    String(u.id) === String(updatedUser.id)
+      ? {
+          ...u,
+          ...updatedUser,
+          computedStatus: updatedUser.suspended_at && updatedUser.suspend_reason
+            ? 'suspended'
+            : updatedUser.is_active === false
+            ? 'deactivated'
+            : 'active',
+          _updatedAt: Date.now(),
+        }
+      : u
+  )
+);
     enqueueSnackbar('User suspended successfully', { variant: 'success' });
     setSuspendDialog(false);
     setSelectedUser(null);
@@ -182,63 +210,73 @@ const handleStatusAction = async (action, user) => {
       flex: 1,
       renderCell: ({ row }) => <StatusChip user={row} />,
     },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      flex: 1.2,
-      sortable: false,
-      renderCell: ({ row }) => {
-        const status = getUserStatus(row);
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              size="small"
-             onClick={() => router.push(`/dashboard/users/create?id=${row.id}`)}
-            >
-              <IconPencil size={18} />
-            </IconButton>
-{row.role_name !== 'SUPER ADMIN' && (
-  <IconButton
-    size="small"
-    onClick={() => handleDeleteUser(row.id)}
-    disabled={actionLoading}
-  >
-    <IconTrash size={18} />
-  </IconButton>
-)}
-          <Select
-  size="small"
-  displayEmpty
-  value=""
-  onChange={(e) => handleStatusAction(e.target.value, row)}
-  input={<OutlinedInput sx={{ fontSize: 13 }} />}
-  sx={{ minWidth: 130 }}
-  disabled={actionLoading}
->
-  <MenuItem value="" disabled>Status</MenuItem>
+   {
+  field: 'actions',
+  headerName: 'Actions',
+  flex: 1.5,
+  sortable: false,
+  renderCell: ({ row }) => {
+    const status = getUserStatus(row);
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          gap: 0.5,
+          height: '100%',      // ← fill full row height
+          width: '100%',
+        }}
+      >
+        <IconButton
+          size="small"
+          onClick={() => router.push(`/dashboard/users/create?id=${row.id}`)}
+        >
+          <IconPencil size={16} />
+        </IconButton>
 
-  
-  {status === 'active' && [
-    <MenuItem key="suspend" value="suspend">Suspend</MenuItem>,
-    <MenuItem key="deactivate" value="deactivate">Deactivate</MenuItem>,
-  ]}
+        {row.role_name !== 'SUPER ADMIN' &&(
+          <IconButton
+            size="small"
+            onClick={() => handleDeleteUser(row.id)}
+            disabled={actionLoading}
+          >
+            <IconTrash size={16} />
+          </IconButton>
+        )}
 
-  
-  {status === 'suspended' && [
-    <MenuItem key="reactivate" value="reactivate">Activate</MenuItem>,
-    <MenuItem key="deactivate" value="deactivate">Deactivate</MenuItem>,
-  ]}
-
- 
-  {status === 'deactivated' && [
-    <MenuItem key="reactivate" value="reactivate">Activate</MenuItem>,
-    <MenuItem key="suspend" value="suspend">Suspend</MenuItem>,
-  ]}
-</Select>
-          </Box>
-        );
-      },
-    },
+        <Select
+          size="small"
+          displayEmpty
+          value=""
+          onChange={(e) => handleStatusAction(e.target.value, row)}
+          sx={{
+            fontSize: 12,
+            height: 32,        // ← fixed height so it fits in row
+            minWidth: 110,
+            maxWidth: 110,
+            '.MuiOutlinedInput-notchedOutline': { borderColor: '#ddd' },
+          }}
+          disabled={actionLoading}
+        >
+          <MenuItem value="" disabled sx={{ fontSize: 12 }}>Status</MenuItem>
+          {status === 'active' && [
+            <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
+            <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
+          ]}
+          {status === 'suspended' && [
+            <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
+            <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
+          ]}
+          {status === 'deactivated' && [
+            <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
+            <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
+          ]}
+        </Select>
+      </Box>
+    );
+  },
+},
   ];
 
 return (
@@ -265,34 +303,41 @@ return (
       </Button>
     </Box>
 
-    {/* TABLE */}
+   
     {loading ? (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
         <CircularProgress />
       </Box>
     ) : (
-      <Box sx={{ width: '100%', overflowX: 'auto' }}> {/* ✅ HORIZONTAL SCROLL */}
+      <Box sx={{ width: '100%', overflowX: 'auto' }}> 
         <DataGrid
-          rows={users}
-          columns={columns}
-          pageSizeOptions={[10, 25, 50]}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 10 } },
-          }}
-          disableRowSelectionOnClick
-          autoHeight
-          rowHeight={60} 
-          sx={{
-            minWidth: 1000,
-            width: '100%',
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-          }}
-        />
+  rows={users}
+  columns={columns}
+  getRowId={(row) => row.id}
+  pageSizeOptions={[10, 25, 50]}
+  initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+  disableRowSelectionOnClick
+  autoHeight
+  rowHeight={56}
+  sx={{
+    minWidth: 1000,
+    width: '100%',
+    bgcolor: 'background.paper',
+    borderRadius: 2,
+    '& .MuiDataGrid-cell': {
+      display: 'flex',
+      alignItems: 'center',   
+      overflow: 'visible',    
+    },
+    '& .MuiDataGrid-row': {
+      overflow: 'visible',    
+    },
+  }}
+/>
       </Box>
     )}
 
-    {/* DIALOG */}
+   
     <SuspendDialog
       open={suspendDialog}
       onClose={() => {

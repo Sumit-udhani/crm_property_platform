@@ -98,7 +98,9 @@ jobs:
       - name: Wait for CRM Rollout
         run: kubectl rollout status deployment/crm-property-platform
 
-      
+      - name: Push Prisma Schema
+        run: |
+          kubectl exec deployment/crm-property-platform -- npx prisma db push --skip-generate
 
       # 🌱 Seed Database (runs after pod is ready)
       - name: Seed Database

@@ -79,6 +79,7 @@ const router = useRouter()
     const fetchUser = async () => {
       try {
         const response = await authService.getMe()
+         console.log('profile_image URL:', response.data.profile_image); 
         if (response.success) {
           const { first_name, last_name, role_name } = response.data
           setProfileData({

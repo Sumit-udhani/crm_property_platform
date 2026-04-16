@@ -16,13 +16,17 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import { IconCamera } from '@tabler/icons-react';
-
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
+import { IconChevronRight } from '@tabler/icons-react';
 import authService from '@/services/auth.service';
+import { useRouter } from 'next/navigation';
+
 
 export default function EditProfileView() {
   const { enqueueSnackbar } = useSnackbar();
   const fileInputRef = useRef(null);
-
+const router = useRouter();
   const [profileData, setProfileData]   = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile]       = useState(null);
@@ -93,6 +97,22 @@ export default function EditProfileView() {
 
   return (
     <Box sx={{ maxWidth: 600 }}>
+         <Breadcrumbs
+      separator={<IconChevronRight size={14} />}
+      sx={{ mb: 2 }}
+    >
+      <Link
+        underline="hover"
+        color="text.secondary"
+        sx={{ cursor: 'pointer', fontSize: 13 }}
+        onClick={() => router.push('/dashboard')}
+      >
+        Dashboard
+      </Link>
+      <Typography color="text.primary" sx={{ fontSize: 13 }}>
+        Settings
+      </Typography>
+    </Breadcrumbs>
       <Typography variant="h3" sx={{ mb: 3 }}>Edit Profile</Typography>
 
       {/* Avatar Upload */}

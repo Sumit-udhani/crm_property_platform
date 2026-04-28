@@ -3,15 +3,15 @@ const router = express.Router();
 
 const { createUser,  getUsers,editUser,updateUserStatus,deleteUser } = require("../controllers/admin/userController");
 const  authMiddleware = require("../middleware/auth.middleware");
-const { isSuperAdmin } = require("../middleware/adminRole.middleware");
+
+const { authorize } = require("../middleware/permission.middleware");
 
 
-// router.get("/roles",authMiddleware , isSuperAdmin, getRoles);
-
-router.get("/users", authMiddleware, isSuperAdmin, getUsers);
-router.post("/create/users", authMiddleware, isSuperAdmin, createUser);
-router.put("/users/:id",    authMiddleware, isSuperAdmin, editUser);
-router.delete("/users/:id", authMiddleware, isSuperAdmin, deleteUser);
-router.patch("/users/:id/status", authMiddleware, isSuperAdmin, updateUserStatus);
+router.use(authMiddleware, authorize("user.manage"));
+router.get("/users",  getUsers);
+router.post("/create/users",  createUser);
+router.put("/users/:id",      editUser);
+router.delete("/users/:id", deleteUser);
+router.patch("/users/:id/status",   updateUserStatus);
 
 module.exports = router;

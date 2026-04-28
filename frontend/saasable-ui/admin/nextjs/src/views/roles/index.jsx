@@ -65,6 +65,7 @@ export default function RolesListView() {
   const columns = [
     { field: 'id',   headerName: 'ID',        width: 80 },
     { field: 'name', headerName: 'Role Name',  flex: 1 },
+   
     {
       field: 'actions',
       headerName: 'Actions',
@@ -75,10 +76,10 @@ export default function RolesListView() {
     sx={{
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center', // or 'flex-start' if you prefer left
+      justifyContent: 'center', 
       gap: 1,
-      height: '100%',   // ✅ IMPORTANT
-      width: '100%',    // ✅ IMPORTANT
+      height: '100%',   
+      width: '100%',    
     }}
   >
     <IconButton

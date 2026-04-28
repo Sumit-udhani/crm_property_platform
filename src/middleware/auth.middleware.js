@@ -3,7 +3,6 @@ const prisma = require("../config/prisma");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    // 1. Get Authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -13,7 +12,6 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // 2. Check Bearer format
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
@@ -21,7 +19,6 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // 3. Extract token
     const token = authHeader.split(" ")[1];
 
     if (!token) {
@@ -31,30 +28,39 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // 4. Verify JWT signature
     const decoded = verifyToken(token);
 
-    // 5. Check token exists in DB and not expired
     const user = await prisma.users.findUnique({
-      where: { id: BigInt(decoded.userId) }
-    })
+      where: { id: BigInt(decoded.userId) },
+    });
 
     if (!user || user.token !== token) {
       return res.status(401).json({
         success: false,
         message: "Session expired or logged out. Please login again.",
-      })
+      });
     }
 
     if (user.token_expires && new Date() > new Date(user.token_expires)) {
       return res.status(401).json({
         success: false,
         message: "Token expired. Please login again.",
-      })
+      });
     }
 
-    // 6. Attach user to request
-    req.user = decoded;
+    
+    const userRole = await prisma.user_roles.findFirst({
+      where: { user_id: BigInt(decoded.userId) },
+      include: { roles: true },
+    });
+
+    req.user = {
+      userId: decoded.userId,
+      email:  user.email,
+      role:   userRole?.roles?.name?.toLowerCase() || null,
+        branch_id: user.branch_id ? user.branch_id.toString() : null,
+    };
+
     next();
 
   } catch (error) {

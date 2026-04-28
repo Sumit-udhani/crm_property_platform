@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams  } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
-
+import Checkbox from '@mui/material/Checkbox';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -17,8 +17,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { IconArrowLeft } from '@tabler/icons-react';
-
+import branchService from '@/services/branch.service';
 import userService from '@/services/user.service';
+import projectService from '@/services/project.service';
+import ListItemText from '@mui/material/ListItemText';
 
 export default function CreateUserView() {
   const router   = useRouter();
@@ -27,14 +29,28 @@ const editId = searchParams.get('id');
 const { enqueueSnackbar } = useSnackbar();
 const isEdit = Boolean(editId);
 
-  
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
+
+  const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
 
   const [roles, setRoles]               = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [formError, setFormError]       = useState('');
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm({
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      role_id: '',
+      branch_ids: [],
+      project_ids: [],
+    }
+  });
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -50,6 +66,35 @@ const isEdit = Boolean(editId);
     fetchRoles();
   }, []);
 
+useEffect(() => {
+  const fetchBranches = async () => {
+    try {
+      const res = await branchService.getBranches();
+      setBranches(res.data || []);
+    } catch {
+      enqueueSnackbar('Failed to load branches', { variant: 'error' });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  fetchBranches();
+}, []);
+
+useEffect(() => {
+  const fetchProjects = async () => {
+    try {
+      const res = await projectService.getProjects();
+      setProjects(res.data || []);
+    } catch {
+      enqueueSnackbar('Failed to load projects', { variant: 'error' });
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  fetchProjects();
+}, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -65,6 +110,12 @@ const isEdit = Boolean(editId);
             email:      user.email      || '',
             phone:      user.phone      || '',
               role_id:    user.role_id ? String(user.role_id) : '',
+              branch_ids: user.branches
+    ? user.branches.map(b => String(b.id))
+    : [],
+    project_ids: user.projects
+    ? user.projects.map(p => String(p.id))
+    : []
           });
          
         }
@@ -81,7 +132,12 @@ const isEdit = Boolean(editId);
     setFormError('');
     try {
       if (isEdit) {
-        await userService.editUser(editId, data);
+        const payload = {
+  ...data,
+  branch_ids: data.branch_ids || [],
+  project_ids: data.project_ids || []
+};
+        await userService.editUser(editId, payload);
         sessionStorage.setItem('userUpdated', 'true');
       } else {
         await userService.createUser(data);
@@ -98,7 +154,7 @@ const isEdit = Boolean(editId);
 
   return (
     <Box sx={{ maxWidth: 600 }}>
-      {/* Back + Title */}
+    
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <Button
           variant="text"
@@ -150,15 +206,89 @@ const isEdit = Boolean(editId);
             {errors.email && <FormHelperText error>{errors.email.message}</FormHelperText>}
           </Box>
 
-          <Box>
-            <InputLabel>Phone</InputLabel>
-            <OutlinedInput
-              {...register('phone')}
-              placeholder="Enter phone number"
-              fullWidth
-            />
-          </Box>
+       <Box>
+  <InputLabel>Phone</InputLabel>
 
+  <OutlinedInput
+    {...register('phone', {
+      pattern: {
+        value: /^[0-9]{10}$/,
+        message: 'Phone must be exactly 10 digits (numbers only)',
+      },
+    })}
+    fullWidth
+    placeholder="Enter phone number"
+    error={Boolean(errors.phone)}
+  />
+
+
+  {errors.phone && (
+    <FormHelperText error>
+      {errors.phone.message}
+    </FormHelperText>
+  )}
+</Box>
+            <Box>
+              <InputLabel>Branch</InputLabel>
+              <Controller
+                name="branch_ids"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                 <Select
+  {...field}
+  multiple   
+  value={field.value || []}
+  fullWidth
+  renderValue={(selected) =>
+    branches
+      .filter(b => selected.includes(String(b.id)))
+      .map(b => b.name)
+      .join(', ')
+  }
+>
+  {branches.map((b) => (
+    <MenuItem key={b.id} value={String(b.id)}>
+  <Checkbox checked={field.value?.includes(String(b.id))} />
+  <ListItemText primary={b.name} />
+</MenuItem>
+  
+  ))}
+</Select>
+                )}
+              />
+            </Box>
+
+            <Box>
+              <InputLabel>Projects</InputLabel>
+              <Controller
+                name="project_ids"
+                control={control}
+                defaultValue={[]}
+                render={({ field }) => (
+                 <Select
+                  {...field}
+                  multiple   
+                  value={field.value || []}
+                  fullWidth
+                  disabled={projectsLoading}
+                  renderValue={(selected) =>
+                    projects
+                      .filter(p => selected.includes(String(p.id)))
+                      .map(p => p.name)
+                      .join(', ')
+                  }
+                >
+                  {projects.map((p) => (
+                    <MenuItem key={p.id} value={String(p.id)}>
+                      <Checkbox checked={field.value?.includes(String(p.id))} />
+                      <ListItemText primary={p.name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+                )}
+              />
+            </Box>
           <Box>
             <InputLabel required>Role</InputLabel>
             <Controller

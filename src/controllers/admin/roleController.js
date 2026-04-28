@@ -3,107 +3,149 @@ const prisma = require("../../config/prisma");
 
 exports.getRoles = async (req, res) => {
   try {
+    const userId = BigInt(req.user.userId);
+    const role = req.user.role;
+
+    let where = {};
+    if (role !== "super admin") {
+      
+    
+      const teamMembers = await prisma.team_members.findMany({
+        where: { created_by: userId },
+        select: { user_id: true },
+      });
+
+      const teamUserIds = teamMembers.map(m => m.user_id);
+
+
+      teamUserIds.push(userId);
+
+      where.created_by = {
+        in: teamUserIds,
+      };
+    }
+
     const roles = await prisma.roles.findMany({
+      where,
       select: {
         id: true,
         name: true,
+  
       },
+      orderBy: { id: "desc" },
     });
 
     return res.status(200).json({
       success: true,
-      message: "Roles fetched successfully",
       data: roles,
     });
 
-  } catch (error) {
+  } catch (err) {
+    console.error("GET ROLES ERROR:", err);
     return res.status(500).json({
       success: false,
-      message: "Error fetching roles",
+      message: err.message || "Internal server error",
     });
   }
 };
+
+
 exports.createRole = async (req, res) => {
   try {
-    const { name} = req.body;
+    let { name } = req.body;
 
-    if (!name || !name.trim()) {
+    if (!name?.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Role name is required",
+        message: "Role name required",
       });
     }
 
-    const existing = await prisma.roles.findFirst({
-      where: { name: name.trim().toLowerCase() },
-    });
+    name = name.trim().toLowerCase();
 
-    if (existing) {
+    const exists = await prisma.roles.findFirst({ where: { name } });
+
+    if (exists) {
       return res.status(409).json({
         success: false,
-        message: "Role with this name already exists",
+        message: "Role already exists",
       });
     }
 
+    const creatorId = BigInt(req.user.userId);
+
     const role = await prisma.roles.create({
-      data: { name: name.trim().toLowerCase() },
-      select: { id: true, name: true },
+      data: {
+        name,
+        created_by: creatorId, 
+      },
+      select: { id: true, name: true},
     });
 
     return res.status(201).json({
       success: true,
-      message: "Role created successfully",
       data: role,
     });
+
   } catch (error) {
-    console.error("Create Role Error:", error);
+    console.error("CREATE ROLE ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message,
     });
   }
 };
 exports.editRole = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    let { name,  } = req.body;
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Role name is required",
-      });
-    }
+    const roleId = BigInt(id);
 
-    const existingRole = await prisma.roles.findUnique({
-      where: { id: BigInt(id) },
+    const role = await prisma.roles.findUnique({
+      where: { id: roleId },
     });
 
-    if (!existingRole) {
+    if (!role) {
       return res.status(404).json({
         success: false,
         message: "Role not found",
       });
     }
 
-    const duplicate = await prisma.roles.findFirst({
-      where: {
-        name: name.trim().toLowerCase(),
-        NOT: { id: BigInt(id) },
-      },
-    });
+    const data = {};
 
-    if (duplicate) {
-      return res.status(409).json({
+   
+    if (name?.trim()) {
+      name = name.trim().toLowerCase();
+
+      const duplicate = await prisma.roles.findFirst({
+        where: {
+          name,
+          NOT: { id: roleId },
+        },
+      });
+
+      if (duplicate) {
+        return res.status(409).json({
+          success: false,
+          message: "Role already exists",
+        });
+      }
+
+      data.name = name;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
         success: false,
-        message: "Role with this name already exists",
+        message: "Nothing to update",
       });
     }
 
     const updated = await prisma.roles.update({
-      where: { id: BigInt(id) },
-      data: { name: name.trim().toLowerCase() },
+      where: { id: roleId },
+      data,
       select: { id: true, name: true },
     });
 
@@ -112,12 +154,12 @@ exports.editRole = async (req, res) => {
       message: "Role updated successfully",
       data: updated,
     });
+
   } catch (error) {
     console.error("Edit Role Error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message,
     });
   }
 };
@@ -126,43 +168,28 @@ exports.deleteRole = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingRole = await prisma.roles.findUnique({
-      where: { id: BigInt(id) },
-    });
+    const roleId = BigInt(id);
 
-    if (!existingRole) {
-      return res.status(404).json({
-        success: false,
-        message: "Role not found",
-      });
-    }
-
-    
     const assignedUsers = await prisma.user_roles.count({
-      where: { role_id: BigInt(id) },
+      where: { role_id: roleId },
     });
 
     if (assignedUsers > 0) {
       return res.status(409).json({
         success: false,
-        message: `Cannot delete this role. It is currently assigned to ${assignedUsers} user(s). Please reassign them first.`,
+        message: "Role is assigned to users",
       });
     }
 
-    await prisma.roles.delete({
-      where: { id: BigInt(id) },
-    });
+    await prisma.roles.delete({ where: { id: roleId } });
 
     return res.status(200).json({
       success: true,
-      message: "Role deleted successfully",
+      message: "Role deleted",
     });
+
   } catch (error) {
-    console.error("Delete Role Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

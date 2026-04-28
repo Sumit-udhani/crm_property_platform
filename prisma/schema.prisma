@@ -105,6 +105,38 @@ model asset_statuses {
   @@schema("crm_ops")
 }
 
+model countries {
+  id     BigInt   @id @default(autoincrement())
+  name   String
+  code   String   @unique
+  states states[]
+
+  @@schema("crm_ops")
+}
+
+model states {
+  id         BigInt @id @default(autoincrement())
+  name       String
+  code       String
+  country_id BigInt
+
+  country countries @relation(fields: [country_id], references: [id])
+  cities  cities[]
+
+  @@unique([code, country_id])
+  @@schema("crm_ops")
+}
+
+model cities {
+  id       BigInt @id @default(autoincrement())
+  name     String
+  state_id BigInt
+
+  state states @relation(fields: [state_id], references: [id])
+
+  @@schema("crm_ops")
+}
+
 model asset_types {
   id     BigInt   @id @default(autoincrement())
   name   String   @unique @db.VarChar(100)
@@ -169,27 +201,40 @@ model audit_logs {
   @@schema("crm_ops")
 }
 
+model branch_projects {
+  branch_id  BigInt
+  project_id BigInt
+
+  branches branches @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  projects projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@id([branch_id, project_id])
+  @@schema("crm_ops")
+}
+
 model branches {
-  id              BigInt        @id @default(autoincrement())
+  id              BigInt            @id @default(autoincrement())
   organization_id BigInt
-  name            String        @db.VarChar(150)
-  code            String?       @db.VarChar(50)
-  address_line_1  String?       @db.VarChar(255)
-  address_line_2  String?       @db.VarChar(255)
-  city            String?       @db.VarChar(100)
-  state           String?       @db.VarChar(100)
-  country         String?       @db.VarChar(100)
-  postal_code     String?       @db.VarChar(20)
-  phone           String?       @db.VarChar(30)
-  email           String?       @db.VarChar(150)
-  created_at      DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  name            String            @db.VarChar(150)
+  code            String?           @db.VarChar(50)
+  address_line_1  String?           @db.VarChar(255)
+  address_line_2  String?           @db.VarChar(255)
+  city            String?           @db.VarChar(100)
+  state           String?           @db.VarChar(100)
+  country         String?           @db.VarChar(100)
+  postal_code     String?           @db.VarChar(20)
+  phone           String?           @db.VarChar(30)
+  email           String?           @db.VarChar(150)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
   accounts        accounts[]
-  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations   organizations     @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   leads           leads[]
-  projects        projects[]
+  branch_projects branch_projects[]
   tickets         tickets[]
   users           users[]
+
+  user_branches user_branches[]
 
   @@unique([organization_id, code], map: "uq_branch_org_code")
   @@index([organization_id], map: "idx_branches_organization_id")
@@ -487,9 +532,12 @@ model organizations {
   id         BigInt     @id @default(autoincrement())
   name       String     @db.VarChar(150)
   code       String?    @unique @db.VarChar(50)
+  created_by BigInt?
   created_at DateTime   @default(now()) @db.Timestamptz(6)
   updated_at DateTime   @default(now()) @db.Timestamptz(6)
   branches   branches[]
+  users      users[]
+  creator    users?     @relation("org_creator", fields: [created_by], references: [id])
 
   @@schema("crm_ops")
 }
@@ -550,28 +598,33 @@ model project_statuses {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model projects {
-  id                               BigInt           @id @default(autoincrement())
-  branch_id                        BigInt?
+  id                               BigInt            @id @default(autoincrement())
   project_status_id                BigInt
-  code                             String?          @unique @db.VarChar(50)
-  name                             String           @db.VarChar(150)
+  code                             String?           @unique @db.VarChar(50)
+  name                             String            @db.VarChar(150)
   description                      String?
   address_id                       BigInt?
-  start_date                       DateTime?        @db.Date
-  end_date                         DateTime?        @db.Date
+  address_line_1                   String?           @db.VarChar(255)
+  address_line_2                   String?           @db.VarChar(255)
+  city                             String?           @db.VarChar(100)
+  state                            String?           @db.VarChar(100)
+  country                          String?           @db.VarChar(100)
+  postal_code                      String?           @db.VarChar(20)
+  start_date                       DateTime?         @db.Date
+  end_date                         DateTime?         @db.Date
   created_by                       BigInt?
   updated_by                       BigInt?
-  created_at                       DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at                       DateTime         @default(now()) @db.Timestamptz(6)
+  created_at                       DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at                       DateTime          @default(now()) @db.Timestamptz(6)
   buildings                        buildings[]
-  addresses                        addresses?       @relation(fields: [address_id], references: [id], onUpdate: NoAction)
-  branches                         branches?        @relation(fields: [branch_id], references: [id], onUpdate: NoAction)
-  users_projects_created_byTousers users?           @relation("projects_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
-  project_statuses                 project_statuses @relation(fields: [project_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_projects_updated_byTousers users?           @relation("projects_updated_byTousers", fields: [updated_by], references: [id], onUpdate: NoAction)
+  addresses                        addresses?        @relation(fields: [address_id], references: [id], onUpdate: NoAction)
+  users_projects_created_byTousers users?            @relation("projects_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
+  project_statuses                 project_statuses  @relation(fields: [project_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_projects_updated_byTousers users?            @relation("projects_updated_byTousers", fields: [updated_by], references: [id], onUpdate: NoAction)
   tickets                          tickets[]
+  branch_projects                  branch_projects[]
+  user_projects                    user_projects[]
 
-  @@index([branch_id], map: "idx_projects_branch_id")
   @@index([project_status_id], map: "idx_projects_status_id")
   @@schema("crm_ops")
 }
@@ -586,12 +639,36 @@ model role_permissions {
   @@schema("crm_ops")
 }
 
+model permissions_role {
+  id BigInt @id @default(autoincrement())
+
+  role_id BigInt
+  module  String @db.VarChar(100)
+
+  can_create Boolean @default(false)
+  can_view   Boolean @default(false)
+  can_edit   Boolean @default(false)
+  can_delete Boolean @default(false)
+
+  roles roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, module])
+  @@index([role_id])
+  @@schema("crm_ops")
+}
+
 model roles {
-  id               BigInt             @id @default(autoincrement())
-  name             String             @unique @db.VarChar(100)
-  description      String?            @db.VarChar(255)
-  role_permissions role_permissions[]
+  id   BigInt @id @default(autoincrement())
+  name String @unique @db.VarChar(100)
+
+  description String? @db.VarChar(255)
+
+  permissions_role permissions_role[]
   user_roles       user_roles[]
+  created_by       BigInt?
+
+  creator         users?             @relation(fields: [created_by], references: [id])
+  rolePermissions role_permissions[]
 
   @@schema("crm_ops")
 }
@@ -848,6 +925,28 @@ model units {
   @@schema("crm_ops")
 }
 
+model user_branches {
+  user_id   BigInt
+  branch_id BigInt
+
+  users    users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  branches branches @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, branch_id])
+  @@schema("crm_ops")
+}
+
+model user_projects {
+  user_id    BigInt
+  project_id BigInt
+
+  users    users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  projects projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, project_id])
+  @@schema("crm_ops")
+}
+
 model user_roles {
   user_id     BigInt
   role_id     BigInt
@@ -861,7 +960,6 @@ model user_roles {
 
 model users {
   id                                                            BigInt                  @id @default(autoincrement())
-  branch_id                                                     BigInt?
   first_name                                                    String                  @db.VarChar(100)
   last_name                                                     String?                 @db.VarChar(100)
   email                                                         String                  @unique @db.VarChar(150)
@@ -871,10 +969,12 @@ model users {
   suspend_reason                                                String?                 @db.VarChar(255)
   suspended_at                                                  DateTime?               @db.Timestamptz(6)
   suspend_until                                                 DateTime?               @db.Timestamptz(6)
-  token                                                          String?                 @db.VarChar(255)
+  token                                                         String?                 @db.VarChar(255)
   token_expiry                                                  DateTime?               @db.Timestamptz(6)
-  profile_image                                                String?                  @db.VarChar(500)
+  profile_image                                                 String?                 @db.VarChar(500)
   last_login_at                                                 DateTime?               @db.Timestamptz(6)
+  created_by                                                    BigInt?
+  organization_id                                               BigInt?
   created_at                                                    DateTime                @default(now()) @db.Timestamptz(6)
   updated_at                                                    DateTime                @default(now()) @db.Timestamptz(6)
   accounts_accounts_created_byTousers                           accounts[]              @relation("accounts_created_byTousers")
@@ -900,11 +1000,34 @@ model users {
   ticket_status_history                                         ticket_status_history[]
   tickets                                                       tickets[]
   user_roles                                                    user_roles[]
-  branches                                                      branches?               @relation(fields: [branch_id], references: [id], onUpdate: NoAction)
-  work_orders_work_orders_assigned_user_idTousers               work_orders[]           @relation("work_orders_assigned_user_idTousers")
-  work_orders_work_orders_created_byTousers                     work_orders[]           @relation("work_orders_created_byTousers")
+  creator                                                       users?                  @relation("UserHierarchy", fields: [created_by], references: [id])
 
-  @@index([branch_id], map: "idx_users_branch_id")
+  created_users users[] @relation("UserHierarchy")
+
+  work_orders_work_orders_assigned_user_idTousers work_orders[]   @relation("work_orders_assigned_user_idTousers")
+  work_orders_work_orders_created_byTousers       work_orders[]   @relation("work_orders_created_byTousers")
+  team_member_as_user                             team_members[]  @relation("member_user")
+  team_member_as_creator                          team_members[]  @relation("member_creator")
+  created_organizations                           organizations[] @relation("org_creator")
+  user_branches                                   user_branches[]
+  user_projects                                   user_projects[]
+  roles                                           roles[]
+  branches                                        branches?       @relation(fields: [branchesId], references: [id])
+  organizations                                   organizations?  @relation(fields: [organization_id], references: [id])
+  branchesId                                      BigInt?
+
+  @@schema("crm_ops")
+}
+
+model team_members {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  created_by BigInt
+  joined_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  user    users @relation("member_user", fields: [user_id], references: [id], onDelete: Cascade)
+  creator users @relation("member_creator", fields: [created_by], references: [id])
+
   @@schema("crm_ops")
 }
 

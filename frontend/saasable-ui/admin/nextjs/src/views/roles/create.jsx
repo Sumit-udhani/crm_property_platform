@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
-
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -39,7 +40,10 @@ export default function CreateRoleView() {
         const res = await roleService.getRoles();
         const role = (res.data || []).find((r) => String(r.id) === String(editId));
         if (role) {
-          reset({ name: role.name });
+              reset({ 
+        name: role.name,
+
+      });
         }
       } catch {
         enqueueSnackbar('Failed to load role details', { variant: 'error' });
@@ -94,7 +98,7 @@ export default function CreateRoleView() {
             />
             {errors.name && <FormHelperText error>{errors.name.message}</FormHelperText>}
           </Box>
-
+         
           {formError && (
             <Alert severity="error" variant="filled" icon={false}>
               {formError}

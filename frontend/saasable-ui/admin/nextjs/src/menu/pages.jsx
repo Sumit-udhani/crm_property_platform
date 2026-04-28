@@ -20,6 +20,27 @@ const pages = {
   url: '/dashboard/roles',
   icon: 'IconShield', 
 },
+{
+  id: 'organizations',
+  title: 'Organizations',
+  type: 'item',
+  url: '/dashboard/organizations',
+  icon: 'IconBuildingCommunity', 
+},
+{
+  id: 'branches',
+  title: 'Branches',
+  type: 'item',
+  url: '/dashboard/branches',
+  icon: 'IconGitBranch', 
+},
+{
+  id: 'projects',
+  title: 'Projects',
+  type: 'item',
+  url: '/dashboard/projects',
+  icon: 'IconPackage', 
+},
 ]
 };
 

@@ -29,7 +29,7 @@ import { useEffect } from 'react'
 import { useSnackbar } from 'notistack'
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 
-/***************************  AUTH - LOGIN  ***************************/
+
 
 export default function AuthLogin({ inputSx }) {
   const router = useRouter();
@@ -73,7 +73,7 @@ export default function AuthLogin({ inputSx }) {
       localStorage.setItem('userId', response.data.userId)
 
       
-      // When setting cookie on login
+     
 const domain = window.location.hostname
 document.cookie = `token=${response.data.token}; path=/; max-age=86400; domain=${domain}`
 

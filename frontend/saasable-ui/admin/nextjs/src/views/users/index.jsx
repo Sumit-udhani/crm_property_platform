@@ -84,6 +84,7 @@ export default function UsersListView() {
 const fetchUsers = async () => {
   try {
     const res = await userService.getUsers();
+    console.log(res);
     const usersWithStatus = (res.data || []).map((u) => ({
       ...u,
       computedStatus: u.suspended_at && u.suspend_reason
@@ -221,6 +222,32 @@ const handleStatusAction = async (action, user) => {
 },
     { field: 'phone',      headerName: 'Phone',      flex: 1 },
     { field: 'role_name',  headerName: 'Role',       flex: 1 },
+   {
+  field: 'branch_names',
+  headerName: 'Branch',
+  flex: 1,
+},
+{
+  field: 'project_count',
+  headerName: 'Projects',
+  flex: 1,
+  renderCell: ({ row }) => (
+    <Typography
+      component="a"
+      href={`/dashboard/projects?userId=${row.id}`}
+      target="_blank"
+      sx={{
+        color: 'primary.main',
+        textDecoration: 'none',
+        '&:hover': {
+          textDecoration: 'underline'
+        }
+      }}
+    >
+      {row.project_count || 0} Projects
+    </Typography>
+  )
+},
     {
       field: 'status',
       headerName: 'Status',

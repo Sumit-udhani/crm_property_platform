@@ -9,17 +9,18 @@ import Box from '@mui/material/Box';
 import menuItems from '@/menu';
 import NavGroup from './NavGroup';
 import authService from '@/services/auth.service';
+import { isSuperAdmin, isOrgAdmin } from '@/utils/permissions';
 
 
 export default function ResponsiveDrawer() {
-  const [role, setRole] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const response = await authService.getMe();
         if (response.success) {
-          setRole(response.data.role_name?.toLowerCase());
+          setUser(response.data);
         }
       } catch (error) {
         console.error('Failed to fetch user for sidebar:', error);
@@ -35,7 +36,7 @@ export default function ResponsiveDrawer() {
     if (clonedItem.children) {
       clonedItem.children = clonedItem.children.filter((child) => {
         if (child.id === 'organizations' ) {
-          return role === 'super admin' || role === 'admin';
+          return isSuperAdmin(user) || isOrgAdmin(user);
         }
         return true;
       });

@@ -3,6 +3,7 @@ const { generateToken,verifyToken } = require("../../utils/jwt");
 const bcrypt = require('bcrypt');
 const { sendEmail } = require("../../utils/emailService");
 const forgotPasswordTemplate = require('../../templates/forgotPasswordTemplate')
+const { getUserFlags } = require("../../utils/userFlags");
 
 exports.login = async (req, res) => {
   try {
@@ -268,6 +269,8 @@ exports.getMe = async (req, res) => {
         phone:         true,
         is_active:     true,
         profile_image: true,
+       
+          organization_id: true,
         user_roles: {
           select: {
             roles: { select: { name: true } }
@@ -279,7 +282,7 @@ exports.getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-
+const flags = await getUserFlags(user.id);
     return res.status(200).json({
       success: true,
       message: "User fetched successfully",
@@ -293,6 +296,7 @@ exports.getMe = async (req, res) => {
           ? `${process.env.BASE_URL}/${user.profile_image}`
           : null,
         role_name:     user.user_roles[0]?.roles?.name || null,
+          ...flags
       }
     });
 

@@ -1,144 +1,89 @@
-
 const prisma = require('../../config/prisma');
-exports.createPermission = async (req, res) => {
+
+exports.assignPermissions = async (req, res) => {
   try {
-    const { code, name, module_name } = req.body;
-
-    if (!code || !name || !module_name) {
-      return res.status(400).json({
-        success: false,
-        message: "code, name, module_name are required",
-      });
+    if (!req.isSuperAdmin) {
+      return res.status(403).json({ success: false, message: 'Only super admin can assign permissions' });
     }
 
-    const existing = await prisma.permissions.findUnique({
-      where: { code },
-    });
+    const { role_id, permissions } = req.body;
 
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: "Permission already exists",
-      });
+    if (!role_id || !Array.isArray(permissions)) {
+      return res.status(400).json({ success: false, message: 'role_id and permissions required' });
     }
 
-    const permission = await prisma.permissions.create({
-      data: {
-        code: code.toLowerCase(),
-        name,
-        module_name,
-      },
-    });
+    const roleId = BigInt(role_id);
 
-    return res.status(201).json({
-      success: true,
-      data: permission,
-    });
-  } catch (err) {
-    console.error("Create Permission Error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
+    await prisma.permissions_role.deleteMany({ where: { role_id: roleId } });
 
-exports.getPermissions = async (req, res) => {
-  try {
-    const permissions = await prisma.permissions.findMany({
-      orderBy: { id: "desc" },
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: permissions,
-    });
-  } catch (err) {
-    return res.status(500).json({ success: false });
-  }
-};
-
-exports.assignPermissionsToRole = async (req, res) => {
-  try {
-    const { role_id, permission_ids } = req.body;
-    const currentUserId = BigInt(req.user.userId);
-    const currentRole = req.user.role;
-
-    if (!role_id || !Array.isArray(permission_ids)) {
-      return res.status(400).json({
-        success: false,
-        message: "role_id and permission_ids required",
-      });
-    }
-
-   
-    const targetRole = await prisma.roles.findUnique({
-      where: { id: BigInt(role_id) },
-    });
-
-    if (!targetRole) {
-      return res.status(404).json({
-        success: false,
-        message: "Role not found",
-      });
-    }
-
-    
-    if (
-      currentRole !== "super admin" &&
-      targetRole.name === "super admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "You cannot modify super admin role",
-      });
-    }
-
-    if (currentRole !== "super admin") {
-      const teamUsers = await prisma.team_members.findMany({
-        where: { created_by: currentUserId },
-        select: { user_id: true },
-      });
-
-      const allowedUserIds = teamUsers.map(u => u.user_id);
-
-    
-      const usersWithRole = await prisma.user_roles.findMany({
-        where: { role_id: BigInt(role_id) },
-        select: { user_id: true },
-      });
-
-      const isAllowed = usersWithRole.every(u =>
-        allowedUserIds.includes(u.user_id)
-      );
-
-      if (!isAllowed) {
-        return res.status(403).json({
-          success: false,
-          message: "You can only modify roles of your team users",
-        });
-      }
-    }
-
-
-    await prisma.role_permissions.deleteMany({
-      where: { role_id: BigInt(role_id) },
-    });
-
-    const data = permission_ids.map(pid => ({
-      role_id: BigInt(role_id),
-      permission_id: BigInt(pid),
+    const data = permissions.map(p => ({
+      role_id:    roleId,
+      module_id:  BigInt(p.module_id),  
+      can_create: !!p.can_create,
+      can_view:   !!p.can_view,
+      can_edit:   !!p.can_edit,
+      can_delete: !!p.can_delete,
     }));
 
-    await prisma.role_permissions.createMany({
-      data,
-      skipDuplicates: true,
-    });
+    await prisma.permissions_role.createMany({ data });
 
-    return res.status(200).json({
-      success: true,
-      message: "Permissions assigned",
-    });
+    return res.status(200).json({ success: true, message: 'Permissions assigned successfully' });
 
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false });
+    console.error('Assign Permission Error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+exports.getPermissionsByRole = async (req, res) => {
+  try {
+    if (!req.isSuperAdmin) {
+      return res.status(403).json({ success: false, message: 'Only super admin can view permissions' });
+    }
+
+    const roleId = BigInt(req.params.role_id);
+
+   
+    const modules = await prisma.modules.findMany({
+      where:   { parent_id: null },
+      include: { children: true },
+      orderBy: { id: 'asc' },
+    });
+
+    const permissions = await prisma.permissions_role.findMany({
+      where: { role_id: roleId },
+    });
+
+    // Key by module_id string
+    const permissionMap = {};
+    permissions.forEach(p => {
+      permissionMap[p.module_id.toString()] = p;
+    });
+
+    const getPerms = (id) => ({
+      can_create: permissionMap[id.toString()]?.can_create || false,
+      can_view:   permissionMap[id.toString()]?.can_view   || false,
+      can_edit:   permissionMap[id.toString()]?.can_edit   || false,
+      can_delete: permissionMap[id.toString()]?.can_delete || false,
+    });
+
+    const result = modules.map(m => ({
+      id:          m.id.toString(),
+      name:        m.name,
+      parent_id:   null,
+      permissions: getPerms(m.id),
+      children:    m.children.map(c => ({
+        id:          c.id.toString(),
+        name:        c.name,
+        parent_id:   m.id.toString(),
+        permissions: getPerms(c.id),
+      })),
+    }));
+
+    return res.status(200).json({ success: true, data: result });
+
+  } catch (err) {
+    console.error('Get Permissions Error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

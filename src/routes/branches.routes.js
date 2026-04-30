@@ -8,9 +8,11 @@ const {
   createBranch,
   getBranches,
   editBranch,
+  deleteBranch
 } = require("../controllers/admin/branches/branchesController");
+const {detectSuperAdmin} = require("../middleware/adminRole.middleware")
 
-router.use(authMiddleware);
+router.use(authMiddleware,detectSuperAdmin);
 
 router.post("/branches", createBranch);
 router.get("/branches", getBranches);

@@ -4,16 +4,22 @@ const {generateCode} = require('../../../utils/generateCode');
 
 exports.createOrganization = async (req, res) => {
   try {
-    
     const userId = BigInt(req.user.userId);
-    const role = req.user.role?.toLowerCase();
- if (!["super admin", "admin"].includes(role)) {
+    const isAllowed =
+      req.isSuperAdmin ||
+      (await prisma.organizations.count({
+        where: { created_by: userId },
+      })) >0; 
+
+    if (!isAllowed) {
       return res.status(403).json({
         success: false,
-        message: "Only admin or super admin can create organization",
+        message: "Not allowed to create organization",
       });
     }
+
     const { name } = req.body;
+
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -21,14 +27,13 @@ exports.createOrganization = async (req, res) => {
       });
     }
 
-    
     const code = await generateCode();
 
     const org = await prisma.organizations.create({
       data: {
         name,
         code,
-        created_by: userId,
+        created_by: req.isSuperAdmin ? null : userId,
       },
     });
 
@@ -45,11 +50,23 @@ exports.createOrganization = async (req, res) => {
 
 exports.getOrganizations = async (req, res) => {
   try {
+    const userId = BigInt(req.user.userId);
+
     let where = {};
 
-    
-    if (req.user.role === "admin") {
-      where.created_by = BigInt(req.user.userId);
+    if (!req.isSuperAdmin) {
+      const orConditions = [
+        { created_by: userId },
+      ];
+
+   
+      if (req.user.organization_id) {
+        orConditions.push({
+          id: BigInt(req.user.organization_id),
+        });
+      }
+
+      where = { OR: orConditions };
     }
 
     const orgs = await prisma.organizations.findMany({
@@ -57,7 +74,7 @@ exports.getOrganizations = async (req, res) => {
       select: {
         id: true,
         name: true,
-        code: true, 
+        code: true,
         created_at: true,
       },
       orderBy: { id: "desc" },
@@ -76,15 +93,9 @@ exports.getOrganizations = async (req, res) => {
 
 exports.editOrganization = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = BigInt(req.user.userId);
+    const orgId = BigInt(req.params.id);
     const { name } = req.body;
-
-    if (req.user.role !== "super admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only super admin can edit organizations",
-      });
-    }
 
     if (!name) {
       return res.status(400).json({
@@ -93,29 +104,118 @@ exports.editOrganization = async (req, res) => {
       });
     }
 
-    const existingOrg = await prisma.organizations.findUnique({
-      where: { id: BigInt(id) },
+    const org = await prisma.organizations.findUnique({
+      where: { id: orgId },
     });
 
-    if (!existingOrg) {
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+    if (
+      !req.isSuperAdmin &&
+      org.created_by !== userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed to edit this organization",
+      });
+    }
+
+    const updated = await prisma.organizations.update({
+      where: { id: orgId },
+      data: { name },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: updated,
+      message: "Organization updated successfully",
+    });
+
+  } catch (err) {
+    console.error("Edit Org Error:", err);
+    return res.status(500).json({ success: false });
+  }
+};
+
+
+exports.deleteOrganization = async (req, res) => {
+  try {
+    const orgId = BigInt(req.params.id);
+    const userId = BigInt(req.user.userId);
+
+    // 🔍 Find organization
+    const org = await prisma.organizations.findUnique({
+      where: { id: orgId },
+    });
+
+    if (!org) {
       return res.status(404).json({
         success: false,
         message: "Organization not found",
       });
     }
 
-    const org = await prisma.organizations.update({
-      where: { id: BigInt(id) },
-      data: { name },
+    // 🔐 Permission check
+    if (!req.isSuperAdmin) {
+
+      // ✅ Get all accessible orgs (your logic)
+      const createdOrgs = await prisma.organizations.findMany({
+        where: { created_by: userId },
+        select: { id: true }
+      });
+
+      const createdOrgIds = createdOrgs.map(o => o.id);
+
+      const assignedOrgId = req.user.organization_id
+        ? BigInt(req.user.organization_id)
+        : null;
+
+      const orgIds = [
+        ...createdOrgIds,
+        ...(assignedOrgId ? [assignedOrgId] : [])
+      ];
+
+      // ❌ If this org is not in allowed list → block
+      if (!orgIds.some(id => BigInt(id) === orgId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Not allowed to delete this organization",
+        });
+      }
+    }
+
+    // ⚠️ Check dependencies (important)
+    const branchCount = await prisma.branches.count({
+      where: { organization_id: orgId },
+    });
+
+    if (branchCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete organization with existing branches",
+      });
+    }
+
+    // 🗑️ Delete
+    await prisma.organizations.delete({
+      where: { id: orgId },
     });
 
     return res.status(200).json({
       success: true,
-      data: org,
-      message: "Organization updated successfully",
+      message: "Organization deleted successfully",
     });
+
   } catch (err) {
-    console.error("Edit Org Error:", err);
-    return res.status(500).json({ success: false });
+    console.error("Delete Organization Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

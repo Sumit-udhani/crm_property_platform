@@ -1,12 +1,20 @@
 const prisma = require("../config/prisma");
-
+const { getUserFlags } = require("../utils/userFlags");
 exports.detectSuperAdmin = async (req, res, next) => {
   try {
     const userId = BigInt(req.user.userId);
 
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      select: { created_by: true },
+      select: {
+        id: true,
+        organization_id: true,
+        user_roles: {
+          select: {
+            role_id: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -16,7 +24,11 @@ exports.detectSuperAdmin = async (req, res, next) => {
       });
     }
 
-    req.user.isSuperAdmin = user.created_by === null;
+    const roleId = user.user_roles?.[0]?.role_id;
+
+    req.isSuperAdmin = BigInt(roleId) === BigInt(6);
+
+    req.user.organization_id = user.organization_id;
 
     next();
 

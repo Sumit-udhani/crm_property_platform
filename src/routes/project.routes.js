@@ -9,18 +9,25 @@ const {
   getProjects,
   editProject,
   getProjectStatuses,
-  getAvailableProjects
+  getAvailableProjects,
+  deleteProject
 } = require("../controllers/admin/project/projectController");
+const {detectSuperAdmin} = require("../middleware/adminRole.middleware")
 
-router.use(authMiddleware);
+router.use(authMiddleware,detectSuperAdmin);
 
 router.post("/projects", createProject);
 router.get("/projects", getProjects);
 router.put("/projects/:id", editProject);
 router.get(
   "/projects/available",
-  authMiddleware,
  getAvailableProjects
+);
+router.delete(
+  "/projects/:id",
+
+
+  deleteProject
 );
 router.get("/project-statuses", getProjectStatuses);
 module.exports = router;

@@ -8,10 +8,16 @@ const {
   createOrganization,
   getOrganizations,
   editOrganization,
+  deleteOrganization
 } = require("../controllers/admin/organization/organizationController");
+const {detectSuperAdmin} = require("../middleware/adminRole.middleware")
 
-router.use(authMiddleware);
+router.use(authMiddleware,detectSuperAdmin);
+router.delete(
+  "/organizations/:id",
 
+  deleteOrganization
+);
 router.post("/organizations", createOrganization);
 router.get("/organizations", getOrganizations);
 router.put("/organizations/:id", editOrganization);

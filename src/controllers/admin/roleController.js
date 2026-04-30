@@ -1,27 +1,21 @@
 const prisma = require("../../config/prisma");
-
-
+const { getAllSubordinateUserIds } = require("../../utils/teamScope"); 
 exports.getRoles = async (req, res) => {
   try {
     const userId = BigInt(req.user.userId);
-    const role = req.user.role;
 
     let where = {};
-    if (role !== "super admin") {
-      
-    
-      const teamMembers = await prisma.team_members.findMany({
-        where: { created_by: userId },
-        select: { user_id: true },
-      });
 
-      const teamUserIds = teamMembers.map(m => m.user_id);
+    if (!req.isSuperAdmin) {
+      const subIds = await getAllSubordinateUserIds(userId);
 
+      const ids = [userId, ...subIds];
 
-      teamUserIds.push(userId);
-
-      where.created_by = {
-        in: teamUserIds,
+      where = {
+        OR: [
+          { created_by: { in: ids } },
+          { created_by: null },
+        ],
       };
     }
 
@@ -30,7 +24,6 @@ exports.getRoles = async (req, res) => {
       select: {
         id: true,
         name: true,
-  
       },
       orderBy: { id: "desc" },
     });
@@ -49,7 +42,6 @@ exports.getRoles = async (req, res) => {
   }
 };
 
-
 exports.createRole = async (req, res) => {
   try {
     let { name } = req.body;
@@ -64,7 +56,6 @@ exports.createRole = async (req, res) => {
     name = name.trim().toLowerCase();
 
     const exists = await prisma.roles.findFirst({ where: { name } });
-
     if (exists) {
       return res.status(409).json({
         success: false,
@@ -77,9 +68,9 @@ exports.createRole = async (req, res) => {
     const role = await prisma.roles.create({
       data: {
         name,
-        created_by: creatorId, 
+        created_by: req.isSuperAdmin ? null : creatorId, 
       },
-      select: { id: true, name: true},
+      select: { id: true, name: true },
     });
 
     return res.status(201).json({
@@ -97,10 +88,10 @@ exports.createRole = async (req, res) => {
 };
 exports.editRole = async (req, res) => {
   try {
-    const { id } = req.params;
-    let { name,  } = req.body;
+    const roleId = BigInt(req.params.id);
+    let { name } = req.body;
 
-    const roleId = BigInt(id);
+    const userId = BigInt(req.user.userId);
 
     const role = await prisma.roles.findUnique({
       where: { id: roleId },
@@ -113,9 +104,23 @@ exports.editRole = async (req, res) => {
       });
     }
 
+    if (!req.isSuperAdmin) {
+      const subIds = await getAllSubordinateUserIds(userId);
+      const allowedIds = [userId, ...subIds];
+
+      if (
+        role.created_by !== null && 
+        !allowedIds.includes(role.created_by)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Not allowed to edit this role",
+        });
+      }
+    }
+
     const data = {};
 
-   
     if (name?.trim()) {
       name = name.trim().toLowerCase();
 
@@ -136,7 +141,7 @@ exports.editRole = async (req, res) => {
       data.name = name;
     }
 
-    if (Object.keys(data).length === 0) {
+    if (!Object.keys(data).length) {
       return res.status(400).json({
         success: false,
         message: "Nothing to update",
@@ -163,12 +168,36 @@ exports.editRole = async (req, res) => {
     });
   }
 };
-
 exports.deleteRole = async (req, res) => {
   try {
-    const { id } = req.params;
+    const roleId = BigInt(req.params.id);
+    const userId = BigInt(req.user.userId);
 
-    const roleId = BigInt(id);
+    const role = await prisma.roles.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: "Role not found",
+      });
+    }
+
+    if (!req.isSuperAdmin) {
+      const subIds = await getAllSubordinateUserIds(userId);
+      const allowedIds = [userId, ...subIds];
+
+      if (
+        role.created_by !== null &&
+        !allowedIds.includes(role.created_by)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Not allowed to delete this role",
+        });
+      }
+    }
 
     const assignedUsers = await prisma.user_roles.count({
       where: { role_id: roleId },
@@ -189,7 +218,10 @@ exports.deleteRole = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Delete Role Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };

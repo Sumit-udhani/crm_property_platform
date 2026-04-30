@@ -16,7 +16,7 @@ logout: async () => {
   if (response.data.success) {
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
-    
+    localStorage.removeItem('user')
     document.cookie = `token=; path=/; max-age=0; domain=${window.location.hostname}`
     document.cookie = 'token=; path=/; max-age=0'
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'

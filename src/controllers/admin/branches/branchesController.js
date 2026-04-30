@@ -1,14 +1,24 @@
 const {generateCode} = require('../../../utils/generateCode');
 const prisma = require("../../../config/prisma");
-const canAccessBranch = async (user, branchId) => {
-  if (user.role === "super admin") return true;
+const canAccessBranch = async (req, branchId) => {
+  if (req.isSuperAdmin) return true;
+
+  const userId = BigInt(req.user.userId);
+  const orgId = req.user.organization_id
+    ? BigInt(req.user.organization_id)
+    : null;
 
   const branch = await prisma.branches.findFirst({
     where: {
       id: branchId,
-      organizations: {
-        created_by: BigInt(user.userId),
-      },
+      OR: [
+        ...(orgId ? [{ organization_id: orgId }] : []),
+        {
+          user_branches: {
+            some: { user_id: userId },
+          },
+        },
+      ],
     },
   });
 
@@ -24,12 +34,8 @@ exports.createBranch = async (req, res) => {
       "city", "state", "country", "postal_code", "phone", "email"
     ];
 
-    // ✅ Validation
     if (requiredFields.some(f => !data[f])) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
     if (!/^\d{10}$/.test(data.phone)) {
@@ -40,39 +46,16 @@ exports.createBranch = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
-    // ✅ 🔥 GET USER ROLES FROM DB
-    const userRoles = await prisma.user_roles.findMany({
-      where: { user_id: userId },
-      include: { roles: true },
-    });
-
-    const roleNames = userRoles.map(r => r.roles.name.toLowerCase());
-
-    // ✅ CHECK PERMISSION (NO HARDCODING IN TOKEN)
-    if (!roleNames.includes("admin") && !roleNames.includes("super admin")) {
-      return res.status(403).json({
-        success: false,
-        message: "Only Admin or Super Admin can create branches",
-      });
-    }
-
     const orgId = BigInt(data.organization_id);
 
-    // ✅ Admin restriction: only their org
-    if (roleNames.includes("admin")) {
-      const org = await prisma.organizations.findFirst({
-        where: { id: orgId, created_by: userId },
-      });
-
-      if (!org) {
+    if (!req.isSuperAdmin) {
+      if (!req.user.organization_id || BigInt(req.user.organization_id) !== orgId) {
         return res.status(403).json({
           success: false,
           message: "You can only create branches in your organization",
         });
       }
     }
-
-  
 
     const code = await generateCode();
 
@@ -91,22 +74,35 @@ exports.createBranch = async (req, res) => {
 
   } catch (err) {
     console.error("Create Branch Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 exports.getBranches = async (req, res) => {
   try {
     const userId = BigInt(req.user.userId);
-    const role = req.user.role;
 
     let where = {};
 
-    if (role !== "super admin") {
-      if (role === "admin") {
-        where.organizations = { created_by: userId };
+    if (!req.isSuperAdmin) {
+
+      const createdOrgs = await prisma.organizations.findMany({
+        where: { created_by: userId },
+        select: { id: true }
+      });
+
+      const createdOrgIds = createdOrgs.map(o => o.id);
+
+      let assignedOrgId = req.user.organization_id
+        ? BigInt(req.user.organization_id)
+        : null;
+      const orgIds = [
+        ...createdOrgIds,
+        ...(assignedOrgId ? [assignedOrgId] : [])
+      ];
+
+      if (orgIds.length > 0) {
+        where.organization_id = { in: orgIds };
+
       } else {
         const branchIds = (
           await prisma.user_branches.findMany({
@@ -137,17 +133,15 @@ exports.getBranches = async (req, res) => {
         city: true,
         country: true,
         state: true,
-        email:true,
+        email: true,
         phone: true,
-        postal_code:true,
-        address_line_1:true,
+        postal_code: true,
+        address_line_1: true,
         organization_id: true,
         organizations: { select: { name: true } },
         branch_projects: {
           include: {
-            projects: {
-              select: { id: true, name: true }
-            }
+            projects: { select: { id: true, name: true } }
           }
         }
       },
@@ -170,20 +164,10 @@ exports.getBranches = async (req, res) => {
         return {
           ...b,
           id: b.id.toString(),
-          name: b.name,
-          code: b.code,
-
           country_id: isCountryId ? b.country.toString() : null,
           state_id: isStateId ? b.state.toString() : null,
-
           country: isCountryId ? (country?.name || "-") : (b.country || "-"),
           state: isStateId ? (state?.name || "-") : (b.state || "-"),
-
-          city: b.city || "-",
-          email:b.email || "-",
-          phone:b.phone || "-",
-          address_line_1:b.address_line_1 || "-",
-          postal_code:b.postal_code || "-",
           organization_id: b.organization_id?.toString() || null,
           organization_name: b.organizations?.name || null,
           projects: b.branch_projects.map(p => ({
@@ -246,7 +230,7 @@ exports.editBranch = async (req, res) => {
     }
 
   
-    const allowed = await canAccessBranch(user, branchId);
+    const allowed = await canAccessBranch(req, branchId);
     if (!allowed) {
       return res.status(403).json({
         success: false,
@@ -391,3 +375,4 @@ exports.editBranch = async (req, res) => {
     });
   }
 };
+

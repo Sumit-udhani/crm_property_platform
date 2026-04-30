@@ -20,6 +20,9 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import branchService from '@/services/branch.service';
 import userService from '@/services/user.service';
 import projectService from '@/services/project.service';
+import organizationService from '@/services/organization.service';
+import authService from '@/services/auth.service';
+import { canAssignOrganization } from '@/utils/permissions';
 import ListItemText from '@mui/material/ListItemText';
 
 export default function CreateUserView() {
@@ -37,6 +40,12 @@ const isEdit = Boolean(editId);
 
   const [roles, setRoles]               = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
+  
+  const [organizations, setOrganizations] = useState([]);
+  const [orgsLoading, setOrgsLoading] = useState(true);
+  
+  const [currentUser, setCurrentUser] = useState(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [formError, setFormError]       = useState('');
 
@@ -47,6 +56,7 @@ const isEdit = Boolean(editId);
       email: '',
       phone: '',
       role_id: '',
+      organization_id: '',
       branch_ids: [],
       project_ids: [],
     }
@@ -63,7 +73,32 @@ const isEdit = Boolean(editId);
         setRolesLoading(false);
       }
     };
+    
+    const fetchMe = async () => {
+      try {
+        const res = await authService.getMe();
+        if (res.success) {
+          setCurrentUser(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user info:', err);
+      }
+    };
+
+    const fetchOrgs = async () => {
+      try {
+        const res = await organizationService.getOrganizations();
+        setOrganizations(res.data || []);
+      } catch (err) {
+        enqueueSnackbar('Failed to load organizations', { variant: 'error' });
+      } finally {
+        setOrgsLoading(false);
+      }
+    };
+
     fetchRoles();
+    fetchMe();
+    fetchOrgs();
   }, []);
 
 useEffect(() => {
@@ -110,6 +145,7 @@ useEffect(() => {
             email:      user.email      || '',
             phone:      user.phone      || '',
               role_id:    user.role_id ? String(user.role_id) : '',
+              organization_id: user.organization_id ? String(user.organization_id) : '',
               branch_ids: user.branches
     ? user.branches.map(b => String(b.id))
     : [],
@@ -135,7 +171,8 @@ useEffect(() => {
         const payload = {
   ...data,
   branch_ids: data.branch_ids || [],
-  project_ids: data.project_ids || []
+  project_ids: data.project_ids || [],
+  organization_id: data.organization_id || null
 };
         await userService.editUser(editId, payload);
         sessionStorage.setItem('userUpdated', 'true');
@@ -289,6 +326,35 @@ useEffect(() => {
                 )}
               />
             </Box>
+
+          <Box>
+            <InputLabel>Organization</InputLabel>
+            <Controller
+              name="organization_id"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  value={field.value || ''}
+                  fullWidth
+                  displayEmpty
+                  disabled={orgsLoading || !canAssignOrganization(currentUser)}
+                  input={<OutlinedInput />}
+                >
+                  <MenuItem value="" disabled>
+                    {orgsLoading ? 'Loading organizations...' : 'Select an organization'}
+                  </MenuItem>
+                  {organizations.map((org) => (
+                    <MenuItem key={org.id} value={String(org.id)}>
+                      {org.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </Box>
+
           <Box>
             <InputLabel required>Role</InputLabel>
             <Controller

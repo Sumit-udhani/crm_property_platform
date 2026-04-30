@@ -47,7 +47,7 @@ export default function ProjectsListView() {
         // Pass userIdFilter to getProjects if it exists
         const params = userIdFilter ? { userId: userIdFilter } : {};
         const projectRes = await projectService.getProjects(params);
-       console.log('project',projectRes)
+       
 
         setProjects(projectRes.data || []);
       } catch (error) {

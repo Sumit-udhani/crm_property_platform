@@ -6,18 +6,16 @@ const { authorize } = require("../middleware/permission.middleware");
 
 const {
   createPermission,
-  getPermissions,
-  assignPermissionsToRole,
+  getPermissionsByRole,
+  assignPermissions,
 } = require("../controllers/permissions/permissionController");
+const { detectSuperAdmin } = require("../middleware/adminRole.middleware");
 
 
 
-router.use(authMiddleware, authorize("permission.manage"));
+router.use(authMiddleware, detectSuperAdmin);
 
-
-
-router.post("/", createPermission);
-router.get("/", getPermissions);
-router.post("/assign", assignPermissionsToRole);
+router.get("/:role_id", getPermissionsByRole);
+router.post("/assign", assignPermissions);
 
 module.exports = router;

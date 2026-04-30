@@ -1,6 +1,6 @@
 const prisma = require("../config/prisma");
 
-async function getAllSubordinateUserIds(userId) {
+exports.getAllSubordinateUserIds = async (userId) => {
   const visited = new Set();
   const queue = [BigInt(userId)];
 
@@ -14,6 +14,7 @@ async function getAllSubordinateUserIds(userId) {
 
     for (const child of children) {
       const id = child.user_id;
+
       if (!visited.has(id)) {
         visited.add(id);
         queue.push(id);
@@ -22,26 +23,52 @@ async function getAllSubordinateUserIds(userId) {
   }
 
   return Array.from(visited);
-}
+};
 
 exports.getUserScopeWhere = async (req) => {
   if (req.isSuperAdmin) return {};
 
-  const ids = await getAllSubordinateUserIds(req.user.userId);
+  const userId = BigInt(req.user.userId);
+  const subIds = await exports.getAllSubordinateUserIds(userId);
+
+  const orConditions = [
+    { id: userId },                
+    { id: { in: subIds } },         
+  ];
+
+  if (req.user.organization_id) {
+    orConditions.push({
+      organization_id: BigInt(req.user.organization_id),
+    });
+  }
 
   return {
-    OR: [
-      { id: BigInt(req.user.userId) },
-      { id: { in: ids } }
-    ]
+    OR: orConditions,
   };
 };
-
 
 exports.getAllowedUserIds = async (req) => {
   if (req.isSuperAdmin) return null;
 
-  const ids = await getAllSubordinateUserIds(req.user.userId);
+  const userId = BigInt(req.user.userId);
+  const subIds = await exports.getAllSubordinateUserIds(userId);
 
-  return [BigInt(req.user.userId), ...ids];
+  let ids = [userId, ...subIds];
+
+
+  if (req.user.organization_id) {
+    const orgUsers = await prisma.users.findMany({
+      where: {
+        organization_id: BigInt(req.user.organization_id),
+      },
+      select: { id: true },
+    });
+
+    ids = [
+      ...ids,
+      ...orgUsers.map(u => u.id),
+    ];
+  }
+
+  return Array.from(new Set(ids));
 };

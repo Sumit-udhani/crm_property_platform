@@ -11,15 +11,13 @@ import AuthLogin from '@/sections/auth/AuthLogin';
 // import AuthSocial from '@/sections/auth/AuthSocial';
 import Copyright from '@/sections/auth/Copyright';
 
-/***************************  AUTH - LOGIN  ***************************/
-
 export default function Login() {
   return (
   <Stack
   sx={{
-    minHeight: '100vh', // ✅ full screen height
+    minHeight: '100vh', 
     alignItems: 'center',
-    justifyContent: 'center', // ✅ center vertically
+    justifyContent: 'center', 
     px: 2,
   }}
 >

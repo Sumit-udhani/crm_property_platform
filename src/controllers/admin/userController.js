@@ -64,7 +64,7 @@ exports.createUser = async (req, res) => {
 
     const result = await prisma.$transaction(async (tx) => {
 
-      const isSuperAdminRole = BigInt(role_id) === BigInt(1);
+      const isSuperAdminRole = BigInt(role_id) === BigInt(6);
 
       const user = await tx.users.create({
         data: {
@@ -74,7 +74,7 @@ exports.createUser = async (req, res) => {
           phone: phone ?? null,
           password_hash: "",
 
-          created_by: isSuperAdminRole ? null : creatorId,
+      
           organization_id: isOrgAdmin ? BigInt(organization_id) : null,
         },
       });
@@ -185,6 +185,8 @@ const projects = user.user_projects?.map(up => ({
     role_id: role?.id ?? null,
     role_name: role?.name ?? null,
 
+    organization_id: user.organization_id?.toString() || null,
+
     branches,
     branch_names: branches.map(b => b.name).join(', '),
       project_count: projects.length,
@@ -247,87 +249,77 @@ const parseIds = (ids) =>
 
 exports.editUser = async (req, res) => {
   try {
-    const userId = BigInt(req.params.id);
-    const { first_name, last_name, email, phone, role_id, branch_ids, project_ids } = req.body;
+    const userId      = BigInt(req.params.id);
+    const requesterId = BigInt(req.user.userId);
+    const { first_name, last_name, email, phone, role_id, branch_ids, project_ids, organization_id } = req.body;
 
     const allowedIds = await getAllowedUserIds(req);
-    if (allowedIds !== null && !allowedIds.some((uid) => uid === userId)) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
+    if (allowedIds !== null && !allowedIds.some(uid => uid === userId)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    const existingUser = await prisma.users.findUnique({ where: { id: userId } });
-    if (!existingUser) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    const existingUser = await prisma.users.findUnique({ where: { id: userId }, select: { id: true, organization_id: true } });
+    if (!existingUser) return res.status(404).json({ success: false, message: "User not found" });
+
+    if (!req.isSuperAdmin) {
+      const orgAdmin = await prisma.organizations.findFirst({ where: { created_by: requesterId } });
+      if (orgAdmin && existingUser.organization_id && existingUser.organization_id !== BigInt(orgAdmin.id)) {
+        return res.status(403).json({ success: false, message: "You can only update users of your organization" });
+      }
     }
 
     const result = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.users.update({
         where: { id: userId },
         data: {
-          ...(first_name && { first_name }),
-          ...(last_name  && { last_name }),
-          ...(phone      && { phone }),
-          ...(email      && { email }),
+          ...(first_name       && { first_name }),
+          ...(last_name        && { last_name }),
+          ...(phone            && { phone }),
+          ...(email            && { email }),
+          ...(organization_id  && { organization_id: BigInt(organization_id) }),
         },
       });
+
       if (role_id) {
-        await tx.user_roles.updateMany({
-          where: { user_id: userId },
-          data:  { role_id: BigInt(role_id) },
-        });
-      }
-      if (branch_ids !== undefined) {
-        const ids = parseIds(branch_ids);
-        await tx.user_branches.deleteMany({ where: { user_id: userId } });
-        if (ids.length) {
-          await tx.user_branches.createMany({
-            data: ids.map((bid) => ({ user_id: userId, branch_id: BigInt(bid) })),
-          });
-        }
-      }
-      if (project_ids !== undefined) {
-        const ids = parseIds(project_ids);
-        await tx.user_projects.deleteMany({ where: { user_id: userId } });
-        if (ids.length) {
-          await tx.user_projects.createMany({
-            data: ids.map((pid) => ({ user_id: userId, project_id: BigInt(pid) })),
-          });
-        }
+        await tx.user_roles.updateMany({ where: { user_id: userId }, data: { role_id: BigInt(role_id) } });
       }
 
+      const replaceMany = async (deleteModel, createModel, ids, mapFn) => {
+        await tx[deleteModel].deleteMany({ where: { user_id: userId } });
+        if (ids.length) await tx[createModel].createMany({ data: ids.map(mapFn) });
+      };
+
+      if (branch_ids !== undefined) {
+        const ids = parseIds(branch_ids);
+        await replaceMany('user_branches', 'user_branches', ids, bid => ({ user_id: userId, branch_id: BigInt(bid) }));
+      }
+
+      if (project_ids !== undefined) {
+        const ids = parseIds(project_ids);
+        await replaceMany('user_projects', 'user_projects', ids, pid => ({ user_id: userId, project_id: BigInt(pid) }));
+      }
       const [role, userBranches] = await Promise.all([
-        tx.user_roles.findFirst({
-          where:   { user_id: userId },
-          include: { roles: { select: { id: true, name: true } } },
-        }),
-        tx.user_branches.findMany({
-          where:   { user_id: userId },
-          include: { branches: { select: { id: true, name: true } } },
-        }),
+        tx.user_roles.findFirst({ where: { user_id: userId }, include: { roles: { select: { id: true, name: true } } } }),
+        tx.user_branches.findMany({ where: { user_id: userId }, include: { branches: { select: { id: true, name: true } } } }),
       ]);
 
       return { updatedUser, role, userBranches };
     });
-
     const { branch_id, ...cleanUser } = result.updatedUser;
-
     return res.status(200).json({
       success: true,
-      message: 'User updated successfully',
+      message: "User updated successfully",
       data: {
         ...cleanUser,
         role_id:   result.role?.roles?.id   ?? null,
         role_name: result.role?.roles?.name ?? null,
-        branches:  result.userBranches.map((b) => ({
-          id:   b.branches.id.toString(),
-          name: b.branches.name,
-        })),
+        branches:  result.userBranches.map(b => ({ id: b.branches.id.toString(), name: b.branches.name })),
       },
     });
 
   } catch (error) {
-    console.error('Edit User Error:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+    console.error("Edit User Error:", error);
+    return res.status(500).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 exports.deleteUser = async (req, res) => {

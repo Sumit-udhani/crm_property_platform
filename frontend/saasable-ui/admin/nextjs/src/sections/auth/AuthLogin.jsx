@@ -68,18 +68,21 @@ export default function AuthLogin({ inputSx }) {
   try {
     const response = await authService.login(formData.email, formData.password)
 
-    if (response.success) {
-      localStorage.setItem('token', response.data.token)
-      localStorage.setItem('userId', response.data.userId)
+   if (response.success) {
+  localStorage.setItem('token', response.data.token)
+  localStorage.setItem('userId', response.data.userId)
 
-      
-     
-const domain = window.location.hostname
-document.cookie = `token=${response.data.token}; path=/; max-age=86400; domain=${domain}`
+  const domain = window.location.hostname
+  document.cookie = `token=${response.data.token}; path=/; max-age=86400; domain=${domain}`
 
-      
-      router.push('/dashboard')
-    }
+  const me = await authService.getMe()
+
+  if (me.success) {
+    localStorage.setItem('user', JSON.stringify(me.data))
+  }
+
+  router.push('/dashboard')
+}
 
   } catch (error) {
     const message = error?.response?.data?.message || 'Login failed. Please try again.'

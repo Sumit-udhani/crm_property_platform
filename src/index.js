@@ -30,6 +30,8 @@ const organizationRoutes = require("./routes/organizatin.routes");
 const branchesRoutes = require("./routes/branches.routes");
 const locationRoutes = require("./routes/location.routes");
 const projectRoutes = require("./routes/project.routes");
+const moduleRoutes = require("./routes/module.routes");
+const buildingRoutes = require("./routes/building.routes");
 
 app.use('/uploads', express.static('uploads'));
 app.use("/api/v1/auth", authRoutes);
@@ -40,6 +42,9 @@ app.use("/api/v1", organizationRoutes);
 app.use("/api/v1",branchesRoutes );
 app.use("/api/v1/locations",locationRoutes );
 app.use("/api/v1",projectRoutes );
+app.use("/api/v1", moduleRoutes);
+app.use("/api/v1/buildings", buildingRoutes);
+
 
 
 app.get("/",(req,res)=>{

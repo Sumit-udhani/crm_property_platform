@@ -10,13 +10,16 @@ const generateCode = async () => {
         const existing = await prisma.organizations.findUnique({
       where: { code },
     });
-       const existingProject = await prisma.organizations.findUnique({
+    const existingBuildings = await prisma.buildings.findFirst({
       where: { code },
     });
+
     
     
     if (!existing) exists = false;
-    if (!existingProject) exists = false;
+    if (!existingBuildings) {
+      exists = false;
+    }
 
 }
 

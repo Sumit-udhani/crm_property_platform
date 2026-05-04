@@ -1,8 +1,17 @@
 const prisma = require("../../../config/prisma");
 const { generateCode } = require("../../../utils/generateCode");
-
+const { isOrgAdminUser } = require("../../../utils/accessControl");
 const getAccessibleOrgIds = async (req) => {
   const userId = BigInt(req.user.userId);
+
+  const isOrgAdmin = await isOrgAdminUser(userId);
+
+  if (req.isSuperAdmin) {
+    const allOrgs = await prisma.organizations.findMany({
+      select: { id: true },
+    });
+    return allOrgs.map(o => o.id);
+  }
 
   const createdOrgs = await prisma.organizations.findMany({
     where: { created_by: userId },
@@ -15,12 +24,20 @@ const getAccessibleOrgIds = async (req) => {
     ? BigInt(req.user.organization_id)
     : null;
 
-  return [
+  let orgIds = [
     ...createdOrgIds,
     ...(assignedOrgId ? [assignedOrgId] : []),
   ];
-};
 
+
+  if (isOrgAdmin && orgIds.length === 0) {
+    if (assignedOrgId) {
+      orgIds.push(assignedOrgId);
+    }
+  }
+
+  return Array.from(new Set(orgIds));
+};
 const canAccessBranch = async (req, branchId) => {
   if (req.isSuperAdmin) return true;
 
@@ -143,50 +160,72 @@ exports.getProjects = async (req, res) => {
     const { userId: filterUserId } = req.query;
 
     let where = {};
-
     if (filterUserId) {
-      where.user_projects = {
-        some: {
-          user_id: BigInt(filterUserId),
+      where = {
+        user_projects: {
+          some: {
+            user_id: BigInt(filterUserId),
+          },
         },
       };
-    } else if (!req.isSuperAdmin) {
+    }
+    else if (req.isSuperAdmin) {
+      where = {};
+    }
+    else {
       const orgIds = await getAccessibleOrgIds(req);
+      const userBranches = await prisma.user_branches.findMany({
+        where: { user_id: userId },
+        select: { branch_id: true },
+      });
 
+      const branchIds = userBranches.map(b => b.branch_id);
 
+      const conditions = [];
+      conditions.push({
+        created_by: userId,
+      });
       if (orgIds.length > 0) {
-        where.branch_projects = {
-          some: {
-            branches: {
-              organization_id: { in: orgIds },
+        conditions.push({
+          branch_projects: {
+            some: {
+              branches: {
+                organization_id: { in: orgIds },
+              },
             },
           },
-        };
-      } else {
-        const userProjects = await prisma.user_projects.findMany({
-          where: { user_id: userId },
-          select: { project_id: true },
         });
-
-        const projectIds = userProjects.map((p) => p.project_id);
-
-        if (!projectIds.length) {
-          return res.status(200).json({
-            success: true,
-            message: "No access",
-            data: [],
-          });
-        }
-
-        where.id = { in: projectIds };
       }
+      if (branchIds.length > 0) {
+        conditions.push({
+          branch_projects: {
+            some: {
+              branch_id: { in: branchIds },
+            },
+          },
+        });
+      }
+
+      conditions.push({
+        user_projects: {
+          some: {
+            user_id: userId,
+          },
+        },
+      });
+
+      where = {
+        OR: conditions,
+      };
     }
 
     const projects = await prisma.projects.findMany({
       where,
       orderBy: { id: "desc" },
       include: {
-        project_statuses: { select: { name: true } },
+        project_statuses: {
+          select: { name: true },
+        },
         branch_projects: {
           include: {
             branches: {
@@ -197,35 +236,68 @@ exports.getProjects = async (req, res) => {
       },
     });
 
-    const data = projects.map((p) => ({
-      id: p.id.toString(),
-      name: p.name,
-      code: p.code,
-      project_status_id: p.project_status_id?.toString(),
-      project_status_name: p.project_statuses?.name || "-",
-      city: p.city || "-",
-      state: p.state || "-",
-      country: p.country || "-",
-      address: p.address_line_1 || "-",
-      branches: p.branch_projects.map((bp) => ({
-        id: bp.branches.id.toString(),
-        name: bp.branches.name,
-      })),
-      start_date: p.start_date,
-      end_date: p.end_date,
-    }));
+    const data = await Promise.all(
+      projects.map(async (p) => {
+        const isCountryId = p.country && !isNaN(p.country);
+        const isStateId = p.state && !isNaN(p.state);
 
+        const [country, state] = await Promise.all([
+          isCountryId
+            ? prisma.countries.findUnique({
+                where: { id: BigInt(p.country) },
+                select: { name: true },
+              })
+            : null,
+          isStateId
+            ? prisma.states.findUnique({
+                where: { id: BigInt(p.state) },
+                select: { name: true },
+              })
+            : null,
+        ]);
+
+        return {
+          id: p.id.toString(),
+          name: p.name,
+          code: p.code,
+
+          project_status_id: p.project_status_id?.toString() || null,
+          project_status_name: p.project_statuses?.name || "-",
+
+          city: p.city || "-",
+
+          country: isCountryId ? (country?.name || "-") : (p.country || "-"),
+          state: isStateId ? (state?.name || "-") : (p.state || "-"),
+
+          country_id: isCountryId ? p.country.toString() : null,
+          state_id: isStateId ? p.state.toString() : null,
+
+          address: p.address_line_1 || "-",
+
+          branches: p.branch_projects.map((bp) => ({
+            id: bp.branches.id.toString(),
+            name: bp.branches.name,
+          })),
+
+          start_date: p.start_date,
+          end_date: p.end_date,
+        };
+      })
+    );
     return res.status(200).json({
       success: true,
       message: "Projects fetched successfully",
       data,
     });
+
   } catch (err) {
     console.error("GET PROJECTS ERROR:", err);
-    return res.status(500).json({ success: false });
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
-
 exports.getAvailableProjects = async (req, res) => {
   try {
     const { branch_id } = req.query;

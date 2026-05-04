@@ -14,15 +14,18 @@ import { IconGitBranch, IconPencil } from '@tabler/icons-react';
 import '../users/custom.css';
 import branchService from '@/services/branch.service';
 import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/utils/permissions';
 import Tooltip from '@mui/material/Tooltip';
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 export default function BranchesListView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
 
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState(null);
 
   useEffect(() => {
     if (sessionStorage.getItem('branchCreated')) {
@@ -34,13 +37,8 @@ export default function BranchesListView() {
       sessionStorage.removeItem('branchUpdated');
     }
     
-    const fetchUserAndBranches = async () => {
+    const fetchBranches = async () => {
       try {
-        const userRes = await authService.getMe();
-        if (userRes.success) {
-          setCurrentUserRole(userRes.data.role_name?.toLowerCase());
-        }
-        
         const branchRes = await branchService.getBranches();
         console.log("branches",branchRes)
         setBranches(branchRes.data || []);
@@ -51,7 +49,7 @@ export default function BranchesListView() {
       }
     };
     
-    fetchUserAndBranches();
+    fetchBranches();
   }, []);
 
   const columns = [
@@ -114,7 +112,7 @@ export default function BranchesListView() {
       sortable: false,
       renderCell: ({ row }) => {
       
-        if (currentUserRole !== 'super admin' && currentUserRole !== 'admin' ) return null;
+        if (!hasPermission(currentUser, 'branches', 'can_edit')) return null;
         
         return (
           <Box
@@ -138,10 +136,14 @@ export default function BranchesListView() {
       },
     }
   ];
- const canCreate = currentUserRole === 'super admin' || currentUserRole === 'admin';
   return (
     <Box sx={{ width: '100%', px: 2, ml: '0px !important' }}> 
-     
+     <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Branches' }
+  ]}
+/>
       <Box
         sx={{
           display: 'flex',
@@ -152,7 +154,7 @@ export default function BranchesListView() {
         }}
       >
         <Typography variant="h3">Branches</Typography>
-{canCreate&&(
+{hasPermission(currentUser, 'branches', 'can_create')&&(
 
 <Button
   variant="contained"

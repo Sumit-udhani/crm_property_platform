@@ -195,7 +195,15 @@ exports.setPassword = async (req, res) => {
         message: "Passwords do not match",
       });
     }
+const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
 
+if (!passwordRegex.test(password)) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Password must be at least 6 characters and include 1 uppercase letter, 1 number, and 1 special character",
+  });
+}
     
     let decoded;
     try {
@@ -207,7 +215,6 @@ exports.setPassword = async (req, res) => {
       });
     }
 
-    // ✅ 3. Check token type
     if (decoded.type !== "SET_PASSWORD") {
       return res.status(400).json({
         success: false,
@@ -215,7 +222,6 @@ exports.setPassword = async (req, res) => {
       });
     }
 
-    // ✅ 4. Find user
     const user = await prisma.users.findUnique({
       where: { id: BigInt(decoded.userId) },
     });

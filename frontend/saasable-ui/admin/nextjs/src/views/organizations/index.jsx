@@ -13,16 +13,18 @@ import { DataGrid } from '@mui/x-data-grid';
 import { IconBuildingCommunity, IconPencil } from '@tabler/icons-react';
 import '../users/custom.css';
 import organizationService from '@/services/organization.service';
-import authService from '@/services/auth.service';
+import { hasPermission, isSuperAdmin } from '@/utils/permissions';
+import { useAuth } from '@/contexts/AuthContext';
 import Tooltip from '@mui/material/Tooltip';
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 export default function OrganizationsListView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-
+  const { user: currentUser } = useAuth();
+const MODULE = 'organizations';
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState(null);
 
   useEffect(() => {
     if (sessionStorage.getItem('orgCreated')) {
@@ -35,13 +37,8 @@ export default function OrganizationsListView() {
     }
     
 
-    const fetchUserAndOrgs = async () => {
+    const fetchOrgs = async () => {
       try {
-        const userRes = await authService.getMe();
-        if (userRes.success) {
-          setCurrentUserRole(userRes.data.role_name?.toLowerCase());
-        }
-        
         const orgRes = await organizationService.getOrganizations();
         setOrganizations(orgRes.data || []);
       } catch (error) {
@@ -51,7 +48,7 @@ export default function OrganizationsListView() {
       }
     };
     
-    fetchUserAndOrgs();
+    fetchOrgs();
   }, []);
 
   const columns = [
@@ -81,7 +78,7 @@ export default function OrganizationsListView() {
       flex: 1,
       sortable: false,
       renderCell: ({ row }) => {
-        if (currentUserRole !== 'super admin') return null;
+       if (!hasPermission(currentUser, MODULE, 'can_edit')) return null;  
         
         return (
           <Box
@@ -106,11 +103,15 @@ export default function OrganizationsListView() {
     }
   ];
 
-  // Only super admin or admin can create an organization
-  const canCreate = currentUserRole === 'super admin' || currentUserRole === 'admin';
-
+ const canCreate = hasPermission(currentUser, MODULE, 'can_create');
   return (
     <Box sx={{ width: '100%', px: 2, ml: '0px !important' }}> 
+    <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Organizations' }
+  ]}
+/>
       <Box
         sx={{
           display: 'flex',

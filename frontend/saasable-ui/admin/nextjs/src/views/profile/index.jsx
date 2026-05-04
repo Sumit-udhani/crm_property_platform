@@ -16,18 +16,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import { IconCamera } from '@tabler/icons-react';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
-import { IconChevronRight } from '@tabler/icons-react';
 import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 export default function EditProfileView() {
   const { enqueueSnackbar } = useSnackbar();
+  const { user, refreshUser } = useAuth();
   const fileInputRef = useRef(null);
 const router = useRouter();
-  const [profileData, setProfileData]   = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile]       = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -36,24 +34,15 @@ const router = useRouter();
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await authService.getMe();
-        if (res.success) {
-          setProfileData(res.data);
-          setImagePreview(res.data.profile_image || null);
-          reset({
-            first_name: res.data.first_name || '',
-            last_name:  res.data.last_name  || '',
-            phone:      res.data.phone      || '',
-          });
-        }
-      } catch {
-        enqueueSnackbar('Failed to load profile', { variant: 'error' });
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (user) {
+      setImagePreview(user.profile_image || null);
+      reset({
+        first_name: user.first_name || '',
+        last_name:  user.last_name  || '',
+        phone:      user.phone      || '',
+      });
+    }
+  }, [user]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -75,8 +64,7 @@ const router = useRouter();
       const res = await authService.updateMe(formData);
       if (res.success) {
         enqueueSnackbar('Profile updated successfully', { variant: 'success' });
-        setProfileData(res.data);
-        setImagePreview(res.data.profile_image || null);
+        await refreshUser();
         setImageFile(null);
       }
     } catch (error) {
@@ -87,7 +75,7 @@ const router = useRouter();
     }
   };
 
-  if (!profileData) {
+  if (!user) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
         <CircularProgress />
@@ -97,22 +85,12 @@ const router = useRouter();
 
   return (
     <Box sx={{ maxWidth: 600 }}>
-         <Breadcrumbs
-      separator={<IconChevronRight size={14} />}
-      sx={{ mb: 2 }}
-    >
-      <Link
-        underline="hover"
-        color="text.secondary"
-        sx={{ cursor: 'pointer', fontSize: 13 }}
-        onClick={() => router.push('/dashboard')}
-      >
-        Dashboard
-      </Link>
-      <Typography color="text.primary" sx={{ fontSize: 13 }}>
-        Settings
-      </Typography>
-    </Breadcrumbs>
+      <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Settings' }
+  ]}
+/>
       <Typography variant="h3" sx={{ mb: 3 }}>Edit Profile</Typography>
 
       {/* Avatar Upload */}
@@ -149,10 +127,10 @@ const router = useRouter();
         </Box>
         <Box>
           <Typography variant="subtitle1" fontWeight={600}>
-            {profileData.first_name} {profileData.last_name}
+            {user.first_name} {user.last_name}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {profileData.role_name}
+            {user.role_name}
           </Typography>
           <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.3 }}>
             JPG, PNG or WebP — max 2MB
@@ -207,7 +185,7 @@ const router = useRouter();
             <InputLabel>Email</InputLabel>
             <OutlinedInput
               fullWidth
-              value={profileData.email || ''}
+              value={user.email || ''}
               disabled
             />
           </Box>
@@ -216,7 +194,7 @@ const router = useRouter();
             <InputLabel>Role</InputLabel>
             <OutlinedInput
               fullWidth
-              value={profileData.role_name || ''}
+              value={user.role_name || ''}
               disabled
             />
           </Box>

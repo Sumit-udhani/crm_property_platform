@@ -91,11 +91,17 @@ export default function CreateRoleView() {
           <Box>
             <InputLabel required>Role Name</InputLabel>
             <OutlinedInput
-              {...register('name', { required: 'Role name is required' })}
-              placeholder="Enter role name"
-              fullWidth
-              error={Boolean(errors.name)}
-            />
+        {...register('name', {
+          required: 'Role name is required',
+          pattern: {
+            value: /^[a-zA-Z]+$/, 
+            message: 'Only alphabets (A-Z) are allowed, no numbers or special characters',
+          },
+        })}
+        placeholder="Enter role name"
+        fullWidth
+        error={Boolean(errors.name)}
+      />
             {errors.name && <FormHelperText error>{errors.name.message}</FormHelperText>}
           </Box>
          

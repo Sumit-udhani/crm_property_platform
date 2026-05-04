@@ -8,26 +8,12 @@ import Box from '@mui/material/Box';
 // @project
 import menuItems from '@/menu';
 import NavGroup from './NavGroup';
-import authService from '@/services/auth.service';
-import { isSuperAdmin, isOrgAdmin } from '@/utils/permissions';
+import { useAuth } from '@/contexts/AuthContext';
+import { isSuperAdmin, isOrgAdmin, hasPermission } from '@/utils/permissions';
 
 
 export default function ResponsiveDrawer() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await authService.getMe();
-        if (response.success) {
-          setUser(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user for sidebar:', error);
-      }
-    };
-    fetchUser();
-  }, []);
+  const { user } = useAuth();
 
   const navGroups = menuItems.items.map((item, index) => {
 
@@ -35,9 +21,32 @@ export default function ResponsiveDrawer() {
 
     if (clonedItem.children) {
       clonedItem.children = clonedItem.children.filter((child) => {
+      
+        if (isSuperAdmin(user) ||isOrgAdmin(user)) return true;
+
         if (child.id === 'organizations' ) {
-          return isSuperAdmin(user) || isOrgAdmin(user);
+          return isOrgAdmin(user);
         }
+
+        if (child.id === 'permissions') {
+           return false; // Only super admin can see permissions link
+        }
+
+        // For other modules, check can_view permission
+        // Mapping menu IDs to module names if they differ
+        const moduleMap = {
+           'users': 'users',
+           'projects': 'projects',
+           'branches': 'branches',
+           'buildings': 'buildings',
+           'roles': 'roles'
+        };
+
+        const moduleName = moduleMap[child.id];
+        if (moduleName) {
+           return hasPermission(user, moduleName, 'can_view');
+        }
+
         return true;
       });
     }

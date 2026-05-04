@@ -82,33 +82,35 @@ export default function AuthSetPassword({ inputSx }) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Stack gap={2}>
 
-        {/* Password */}
         <Box>
           <InputLabel>New Password</InputLabel>
-          <OutlinedInput
-            {...register('password', {
-              required: 'Password is required',
-              minLength: { value: 6, message: 'Password must be at least 6 characters' }
-            })}
-            type={isPasswordVisible ? 'text' : 'password'}
-            placeholder="Enter new password"
-            fullWidth
-            error={Boolean(errors.password)}
-            endAdornment={
-              <InputAdornment
-                position="end"
-                sx={{ cursor: 'pointer' }}
-                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-              >
-                {isPasswordVisible ? <IconEye {...commonIconProps} /> : <IconEyeOff {...commonIconProps} />}
-              </InputAdornment>
-            }
-            sx={inputSx}
-          />
+         <OutlinedInput
+  {...register('password', {
+    required: 'Password is required',
+    pattern: {
+      value: /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/,
+      message:
+        'Must be 6+ chars, include 1 uppercase, 1 number, and 1 special character'
+    }
+  })}
+  type={isPasswordVisible ? 'text' : 'password'}
+  placeholder="Enter new password"
+  fullWidth
+  error={Boolean(errors.password)}
+  endAdornment={
+    <InputAdornment
+      position="end"
+      sx={{ cursor: 'pointer' }}
+      onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+    >
+      {isPasswordVisible ? <IconEye {...commonIconProps} /> : <IconEyeOff {...commonIconProps} />}
+    </InputAdornment>
+  }
+  sx={inputSx}
+/>
           {errors.password?.message && <FormHelperText error>{errors.password.message}</FormHelperText>}
         </Box>
 
-        {/* Confirm Password */}
         <Box>
           <InputLabel>Confirm Password</InputLabel>
           <OutlinedInput

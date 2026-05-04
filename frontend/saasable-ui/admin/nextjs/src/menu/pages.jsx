@@ -21,6 +21,13 @@ const pages = {
   icon: 'IconShield', 
 },
 {
+  id: 'permissions',
+  title: 'Permissions',
+  type: 'item',
+  url: '/dashboard/permissions',
+  icon: 'IconLockAccess', 
+},
+{
   id: 'organizations',
   title: 'Organizations',
   type: 'item',
@@ -33,6 +40,13 @@ const pages = {
   type: 'item',
   url: '/dashboard/branches',
   icon: 'IconGitBranch', 
+},
+{
+  id: 'buildings',
+  title: 'Buildings',
+  type: 'item',
+  url: '/dashboard/buildings',
+  icon: 'IconBuildingSkyscraper', 
 },
 {
   id: 'projects',

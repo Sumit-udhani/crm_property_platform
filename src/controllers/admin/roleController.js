@@ -1,22 +1,41 @@
 const prisma = require("../../config/prisma");
 const { getAllSubordinateUserIds } = require("../../utils/teamScope"); 
+const { isOrgAdminUser } = require("../../utils/accessControl");
 exports.getRoles = async (req, res) => {
   try {
     const userId = BigInt(req.user.userId);
 
     let where = {};
 
-    if (!req.isSuperAdmin) {
-      const subIds = await getAllSubordinateUserIds(userId);
+    if (req.isSuperAdmin) {
+      where = {};
+    } 
+    else {
+      const isOrgAdmin = await isOrgAdminUser(userId);
 
-      const ids = [userId, ...subIds];
-
-      where = {
+    if (isOrgAdmin) {
+  where = {
+    AND: [
+      {
+        NOT: { id: BigInt(6) }, // exclude super admin
+      },
+      {
         OR: [
-          { created_by: { in: ids } },
-          { created_by: null },
+          { created_by: null }, // system roles
+          { created_by: { not: null } }, // user-created roles
         ],
-      };
+      },
+    ],
+  };
+}
+      else {
+        const subIds = await getAllSubordinateUserIds(userId);
+        const ids = [userId, ...subIds];
+
+        where = {
+          created_by: { in: ids },
+        };
+      }
     }
 
     const roles = await prisma.roles.findMany({
@@ -54,7 +73,14 @@ exports.createRole = async (req, res) => {
     }
 
     name = name.trim().toLowerCase();
+    const alphaRegex = /^[a-z]+$/;
 
+    if (!alphaRegex.test(name)) {
+      return res.status(400).json({
+        success: false,
+        message: "Role name must contain only alphabets (a-z) with no spaces or special characters",
+      });
+    }
     const exists = await prisma.roles.findFirst({ where: { name } });
     if (exists) {
       return res.status(409).json({

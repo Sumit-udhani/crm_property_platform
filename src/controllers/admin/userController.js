@@ -4,7 +4,8 @@ const { sendEmail } = require("../../utils/emailService");
 const suspendedTemplate = require("../../templates/suspendedTemplate");
 const reactivatedTemplate = require('../../templates/reactivatedTemplate')
 const { setPasswordTemplate } = require("../../templates/setPassword.template");
-const {getUserScopeWhere,getAllowedUserIds} = require('../../utils/teamScope')
+const {getUserScopeWhere,getAllowedUserIds} = require('../../utils/teamScope');
+const { isOrgAdminUser } = require("../../utils/accessControl");
 exports.createUser = async (req, res) => {
   try {
     const {
@@ -15,7 +16,7 @@ exports.createUser = async (req, res) => {
       role_id,
       branch_ids = [],
       project_ids = [],
-      organization_id 
+      organization_id,
     } = req.body;
 
     if (!first_name || !email || !role_id) {
@@ -32,7 +33,10 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    const existingUser = await prisma.users.findUnique({ where: { email } });
+    const existingUser = await prisma.users.findUnique({
+      where: { email },
+    });
+
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -42,28 +46,33 @@ exports.createUser = async (req, res) => {
 
     const creatorId = BigInt(req.user.userId);
 
-    let isOrgAdmin = false;
+    const isOrgAdmin = await isOrgAdminUser(creatorId);
+
+    let finalOrgId = null;
 
     if (organization_id) {
-      const org = await prisma.organizations.findFirst({
-        where: {
-          id: BigInt(organization_id),
-          created_by: creatorId,
-        },
+      const org = await prisma.organizations.findUnique({
+        where: { id: BigInt(organization_id) },
       });
 
       if (!org) {
-        return res.status(403).json({
+        return res.status(404).json({
           success: false,
-          message: "You can only assign your own organization",
+          message: "Organization not found",
         });
       }
 
-      isOrgAdmin = true;
+      if (!isOrgAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: "Only org admin can assign organization",
+        });
+      }
+
+      finalOrgId = BigInt(organization_id);
     }
 
     const result = await prisma.$transaction(async (tx) => {
-
       const isSuperAdminRole = BigInt(role_id) === BigInt(6);
 
       const user = await tx.users.create({
@@ -73,12 +82,11 @@ exports.createUser = async (req, res) => {
           email,
           phone: phone ?? null,
           password_hash: "",
-
-      
-          organization_id: isOrgAdmin ? BigInt(organization_id) : null,
+          organization_id: finalOrgId,
         },
       });
-      if (branch_ids.length) {
+
+      if (Array.isArray(branch_ids) && branch_ids.length) {
         await tx.user_branches.createMany({
           data: branch_ids.map((bId) => ({
             user_id: user.id,
@@ -86,20 +94,23 @@ exports.createUser = async (req, res) => {
           })),
         });
       }
-      if (project_ids.length) {
+
+      if (Array.isArray(project_ids) && project_ids.length) {
         await tx.user_projects.createMany({
-          data: project_ids.map((pid) => ({
+          data: project_ids.map((pId) => ({
             user_id: user.id,
-            project_id: BigInt(pid),
+            project_id: BigInt(pId),
           })),
         });
       }
+
       await tx.user_roles.create({
         data: {
           user_id: user.id,
           role_id: BigInt(role_id),
         },
       });
+
       if (!isSuperAdminRole) {
         await tx.team_members.create({
           data: {
@@ -109,19 +120,19 @@ exports.createUser = async (req, res) => {
         });
       }
 
-      const role = await tx.roles.findUnique({
-        where: { id: BigInt(role_id) },
-        select: { name: true },
-      });
+      return user;
+    });
 
-      return { user, role };
+    const role = await prisma.roles.findUnique({
+      where: { id: BigInt(role_id) },
+      select: { name: true },
     });
 
     try {
       const token = generateToken(
         {
-          userId: result.user.id.toString(),
-          email: result.user.email,
+          userId: result.id.toString(),
+          email: result.email,
           type: "SET_PASSWORD",
         },
         "15m"
@@ -134,7 +145,6 @@ exports.createUser = async (req, res) => {
         "Set Your Password",
         setPasswordTemplate(first_name, link)
       );
-
     } catch (emailError) {
       console.error("Email failed:", emailError);
     }
@@ -143,9 +153,9 @@ exports.createUser = async (req, res) => {
       success: true,
       message: "User created & email sent",
       data: {
-        ...result.user,
-        id: result.user.id.toString(),
-        role_name: result.role?.name || null,
+        ...result,
+        id: result.id.toString(),
+        role_name: role?.name || null,
       },
     });
 
@@ -157,7 +167,6 @@ exports.createUser = async (req, res) => {
     });
   }
 };
-
 
 
 const formatUser = (user) => {

@@ -1,5 +1,5 @@
 const prisma = require("../config/prisma");
-
+const { isOrgAdminUser,getAccessibleOrgIds} = require("./accessControl");
 exports.getAllSubordinateUserIds = async (userId) => {
   const visited = new Set();
   const queue = [BigInt(userId)];
@@ -30,15 +30,41 @@ exports.getUserScopeWhere = async (req) => {
 
   const userId = BigInt(req.user.userId);
   const subIds = await exports.getAllSubordinateUserIds(userId);
+  const orgIds = await getAccessibleOrgIds(req);
 
   const orConditions = [
-    { id: userId },                
-    { id: { in: subIds } },         
+    { id: userId },
+    { id: { in: subIds } },
   ];
 
-  if (req.user.organization_id) {
+  if (orgIds && orgIds.length > 0) {
     orConditions.push({
-      organization_id: BigInt(req.user.organization_id),
+      organization_id: { in: orgIds },
+    });
+
+    orConditions.push({
+      user_branches: {
+        some: {
+          branches: {
+            organization_id: { in: orgIds },
+          },
+        },
+      },
+    });
+    orConditions.push({
+      user_projects: {
+        some: {
+          projects: {
+            branch_projects: {
+              some: {
+                branches: {
+                  organization_id: { in: orgIds },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -55,11 +81,15 @@ exports.getAllowedUserIds = async (req) => {
 
   let ids = [userId, ...subIds];
 
+const isOrgAdmin = await isOrgAdminUser(userId);
 
-  if (req.user.organization_id) {
+  if (isOrgAdmin) {
+  const orgIds = await getAccessibleOrgIds(req);
+
+  if (orgIds.length > 0) {
     const orgUsers = await prisma.users.findMany({
       where: {
-        organization_id: BigInt(req.user.organization_id),
+        organization_id: { in: orgIds },
       },
       select: { id: true },
     });
@@ -69,6 +99,6 @@ exports.getAllowedUserIds = async (req) => {
       ...orgUsers.map(u => u.id),
     ];
   }
-
+}
   return Array.from(new Set(ids));
 };

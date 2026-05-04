@@ -5,10 +5,10 @@ const { createUser,  getUsers,editUser,updateUserStatus,deleteUser } = require("
 const  authMiddleware = require("../middleware/auth.middleware");
 const {detectSuperAdmin} = require("../middleware/adminRole.middleware")
 
-// const { authorize } = require("../middleware/permission.middleware");
+const { authorize } = require("../middleware/permission.middleware");
 
 
-router.use(authMiddleware,detectSuperAdmin);
+router.use(authMiddleware,detectSuperAdmin,authorize);
 router.get("/users",  getUsers);
 router.post("/create/users",  createUser);
 router.put("/users/:id",      editUser);

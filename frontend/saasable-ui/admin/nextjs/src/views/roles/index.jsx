@@ -11,6 +11,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import { DataGrid } from '@mui/x-data-grid';
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-react';
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 import roleService from '@/services/role.service';
 
@@ -103,6 +104,12 @@ export default function RolesListView() {
 
   return (
     <Box sx={{ width: '100%', px: 2 }}>
+          <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Roles' }
+  ]}
+/>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h3">Roles</Typography>
         <Button

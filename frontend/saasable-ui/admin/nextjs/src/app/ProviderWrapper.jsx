@@ -8,6 +8,7 @@ import PropTypes from 'prop-types';
 // @project
 import Notistack from '@/components/third-party/Notistack';
 import { ConfigProvider } from '@/contexts/ConfigContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import ThemeCustomization from '@/themes';
 
 /***************************  LAYOUT - CONFIG, THEME  ***************************/
@@ -17,9 +18,11 @@ export default function ProviderWrapper({ children }) {
     <>
       <InitColorSchemeScript attribute="data-color-scheme" defaultMode="light" />
       <ConfigProvider>
-        <ThemeCustomization>
-          <Notistack>{children}</Notistack>
-        </ThemeCustomization>
+        <AuthProvider>
+          <ThemeCustomization>
+            <Notistack>{children}</Notistack>
+          </ThemeCustomization>
+        </AuthProvider>
       </ConfigProvider>
     </>
   );

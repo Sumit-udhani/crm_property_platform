@@ -17,8 +17,13 @@ import { DataGrid } from '@mui/x-data-grid';
 import { IconUserPlus, IconPencil,IconTrash } from '@tabler/icons-react';
 import './custom.css'
 import userService from '@/services/user.service';
+import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/utils/permissions';
 import SuspendDialog from '@/components/users/SuspendDialog';  
 import Tooltip from '@mui/material/Tooltip';
+import { isSuperAdmin } from '@/utils/permissions';
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 const StatusChip = ({ user }) => {
   const status = user.computedStatus || 'active';
@@ -58,6 +63,7 @@ const getUserStatus = (user) => user.computedStatus || 'active';
 export default function UsersListView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
 
   const [users, setUsers]             = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -80,12 +86,11 @@ export default function UsersListView() {
     fetchUsers();
   }, []);
 
-  // In fetchUsers — add computed status field
 const fetchUsers = async () => {
   try {
-    const res = await userService.getUsers();
-    console.log(res);
-    const usersWithStatus = (res.data || []).map((u) => ({
+    const userRes = await userService.getUsers();
+
+    const usersWithStatus = (userRes.data || []).map((u) => ({
       ...u,
       computedStatus: u.suspended_at && u.suspend_reason
         ? 'suspended'
@@ -268,55 +273,59 @@ const handleStatusAction = async (action, user) => {
           alignItems: 'center',
           justifyContent: 'flex-start',
           gap: 0.5,
-          height: '100%',      // ← fill full row height
+          height: '100%',      
           width: '100%',
         }}
       >
-        <IconButton
-          size="small"
-          onClick={() => router.push(`/dashboard/users/create?id=${row.id}`)}
-        >
-          <IconPencil size={16} />
-        </IconButton>
-
-        {row.role_name !== 'SUPER ADMIN' &&(
+        {hasPermission(currentUser, 'users', 'can_edit') && (
           <IconButton
             size="small"
-            onClick={() => handleDeleteUser(row.id)}
-            disabled={actionLoading}
+            onClick={() => router.push(`/dashboard/users/create?id=${row.id}`)}
           >
-            <IconTrash size={16} />
+            <IconPencil size={16} />
           </IconButton>
         )}
 
-        <Select
-          size="small"
-          displayEmpty
-          value=""
-          onChange={(e) => handleStatusAction(e.target.value, row)}
-          sx={{
-            fontSize: 12,
-            height: 32,        // ← fixed height so it fits in row
-            minWidth: 110,
-            maxWidth: 110,
-            '.MuiOutlinedInput-notchedOutline': { borderColor: '#ddd' },
-          }}
-          disabled={actionLoading}
-        >
-          <MenuItem value="" disabled sx={{ fontSize: 12 }}>Status</MenuItem>
-          {status === 'active' && [
-            <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
-            <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
-          ]}
-          {status === 'suspended' && [
-            <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
-            <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
-          ]}
-          {status === 'deactivated' && [
-            <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
-            <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
-          ]}
-        </Select>
+     {row.id !== currentUser.id &&  row.role_name !== isSuperAdmin &&
+ hasPermission(currentUser, 'users', 'can_delete') && (
+  <IconButton
+    size="small"
+    onClick={() => handleDeleteUser(row.id)}
+    disabled={actionLoading}
+  >
+    <IconTrash size={16} />
+  </IconButton>
+)}
+        {hasPermission(currentUser, 'users', 'can_edit') && (
+          <Select
+            size="small"
+            displayEmpty
+            value=""
+            onChange={(e) => handleStatusAction(e.target.value, row)}
+            sx={{
+              fontSize: 12,
+              height: 32,        
+              minWidth: 110,
+              maxWidth: 110,
+              '.MuiOutlinedInput-notchedOutline': { borderColor: '#ddd' },
+            }}
+            disabled={actionLoading}
+          >
+            <MenuItem value="" disabled sx={{ fontSize: 12 }}>Status</MenuItem>
+            {status === 'active' && [
+              <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
+              <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
+            ]}
+            {status === 'suspended' && [
+              <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
+              <MenuItem key="deactivate" value="deactivate" sx={{ fontSize: 12 }}>Deactivate</MenuItem>,
+            ]}
+            {status === 'deactivated' && [
+              <MenuItem key="reactivate" value="reactivate" sx={{ fontSize: 12 }}>Activate</MenuItem>,
+              <MenuItem key="suspend"    value="suspend"    sx={{ fontSize: 12 }}>Suspend</MenuItem>,
+            ]}
+          </Select>
+        )}
       </Box>
     );
   },
@@ -326,7 +335,12 @@ const handleStatusAction = async (action, user) => {
 return (
   <Box sx={{ width: '100%', px: 2, ml: '0px !important' }}> 
     
-    
+         <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Users' }
+  ]}
+/>
     <Box
       sx={{
         display: 'flex',
@@ -338,13 +352,15 @@ return (
     >
       <Typography variant="h3">Users</Typography>
 
-      <Button
-        variant="contained"
-        startIcon={<IconUserPlus size={18} />}
-        onClick={() => router.push('/dashboard/users/create')}
-      >
-        Add User
-      </Button>
+      {hasPermission(currentUser, 'users', 'can_create') && (
+        <Button
+          variant="contained"
+          startIcon={<IconUserPlus size={18} />}
+          onClick={() => router.push('/dashboard/users/create')}
+        >
+          Add User
+        </Button>
+      )}
     </Box>
 
    

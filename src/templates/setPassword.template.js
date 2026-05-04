@@ -8,7 +8,7 @@ const setPasswordTemplate = (name, link) => {
        style="padding:10px 20px;background:#1976d2;color:#fff;text-decoration:none;">
        Set Password
     </a>
-    <p>This link will expire in 24 hours.</p>
+    <p>This link will expire in 15 mins.</p>
   `;
 };
 

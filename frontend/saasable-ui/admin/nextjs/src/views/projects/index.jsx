@@ -14,17 +14,20 @@ import { IconPackage, IconPencil } from '@tabler/icons-react';
 import '../users/custom.css';
 import projectService from '@/services/project.service';
 import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/utils/permissions';
 import Tooltip from '@mui/material/Tooltip';
+import AppBreadcrumb from '@/components/AppBreadcrumb';
 
 export default function ProjectsListView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userIdFilter = searchParams.get('userId');
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState(null);
 
   useEffect(() => {
     if (sessionStorage.getItem('projectCreated')) {
@@ -36,18 +39,11 @@ export default function ProjectsListView() {
       sessionStorage.removeItem('projectUpdated');
     }
     
-    const fetchUserAndProjects = async () => {
+    const fetchProjects = async () => {
       try {
-        const userRes = await authService.getMe();
-        
-        if (userRes.success) {
-          setCurrentUserRole(userRes.data.role_name?.toLowerCase());
-        }
-        
-        // Pass userIdFilter to getProjects if it exists
         const params = userIdFilter ? { userId: userIdFilter } : {};
         const projectRes = await projectService.getProjects(params);
-       
+       console.log("project",projectRes)
 
         setProjects(projectRes.data || []);
       } catch (error) {
@@ -57,7 +53,7 @@ export default function ProjectsListView() {
       }
     };
     
-    fetchUserAndProjects();
+    fetchProjects();
   }, [userIdFilter]);
 
 const formatDate = (date) => {
@@ -117,7 +113,7 @@ const columns = [
     field: 'country',
     headerName: 'Country',
     flex: 1,
-    valueGetter: (value, row) => row?.country_name || '-'
+   valueGetter: (value, row) => row?.country || '-'
   },
 
  
@@ -125,7 +121,7 @@ const columns = [
   field: 'state',
   headerName: 'State',
   flex: 1,
-  valueGetter: (value, row) => row?.state_name || '-'
+  valueGetter: (value, row) => row?.state|| '-'
 },
 
  { field: 'city', headerName: 'City', flex: 1 },
@@ -149,7 +145,7 @@ const columns = [
     flex: 1,
     sortable: false,
     renderCell: ({ row }) => {
-      if (currentUserRole !== 'super admin'&& currentUserRole !== 'admin') return null;
+      if (!hasPermission(currentUser, 'projects', 'can_edit')) return null;
 
       return (
         <Box sx={{
@@ -171,6 +167,12 @@ const columns = [
 ];
   return (
     <Box sx={{ width: '100%', px: 2, ml: '0px !important' }}> 
+    <AppBreadcrumb
+  items={[
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Projects' }
+  ]}
+/>
       <Box
         sx={{
           display: 'flex',
@@ -182,13 +184,15 @@ const columns = [
       >
         <Typography variant="h3">Projects</Typography>
 
-        <Button
-          variant="contained"
-          startIcon={<IconPackage size={18} />}
-          onClick={() => router.push('/dashboard/projects/create')}
-        >
-          Add Project
-        </Button>
+        {hasPermission(currentUser, 'projects', 'can_create') && (
+          <Button
+            variant="contained"
+            startIcon={<IconPackage size={18} />}
+            onClick={() => router.push('/dashboard/projects/create')}
+          >
+            Add Project
+          </Button>
+        )}
       </Box>
 
       {loading ? (

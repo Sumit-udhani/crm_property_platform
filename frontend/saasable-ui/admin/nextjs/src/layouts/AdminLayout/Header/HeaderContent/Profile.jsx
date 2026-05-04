@@ -30,6 +30,7 @@ import Profile from '@/components/Profile';
 import { AvatarSize, ChipIconPosition } from '@/enum';
 import useConfig from '@/hooks/useConfig';
 import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
 // @assets
 import { IconChevronRight, IconLanguage, IconLogout, IconSettings, IconTextDirectionLtr } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
@@ -48,6 +49,7 @@ const languageList = [
 /***************************  HEADER - PROFILE  ***************************/
 
 export default function ProfileSection() {
+  const { user } = useAuth();
   const theme = useTheme();
   const {
     state: { i18n }
@@ -76,27 +78,18 @@ const router = useRouter()
 
 
     useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await authService.getMe()
-         console.log('profile_image URL:', response.data.profile_image); 
-        if (response.success) {
-          const { first_name, last_name, role_name } = response.data
-          setProfileData({
-            avatar: {
-              src:  response.data.profile_image || '/assets/images/users/avatar-1.png',
-              size: AvatarSize.XS
-            },
-            title:   `${first_name} ${last_name || ''}`.trim(),
-            caption: role_name || ''
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error)
-      }
+    if (user) {
+      const { first_name, last_name, role_name, profile_image } = user;
+      setProfileData({
+        avatar: {
+          src: profile_image || '/assets/images/users/avatar-1.png',
+          size: AvatarSize.XS
+        },
+        title: `${first_name} ${last_name || ''}`.trim(),
+        caption: role_name || ''
+      });
     }
-    fetchUser()
-  }, [])
+  }, [user]);
 const logoutAccount = async () => {
   try {
     setAnchorEl(null);

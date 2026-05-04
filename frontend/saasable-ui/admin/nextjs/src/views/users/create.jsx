@@ -22,6 +22,7 @@ import userService from '@/services/user.service';
 import projectService from '@/services/project.service';
 import organizationService from '@/services/organization.service';
 import authService from '@/services/auth.service';
+import { useAuth } from '@/contexts/AuthContext';
 import { canAssignOrganization } from '@/utils/permissions';
 import ListItemText from '@mui/material/ListItemText';
 
@@ -31,6 +32,7 @@ const searchParams = useSearchParams();
 const editId = searchParams.get('id');   
 const { enqueueSnackbar } = useSnackbar();
 const isEdit = Boolean(editId);
+const { user: currentUser } = useAuth();
 
   const [branches, setBranches] = useState([]);
   const [branchesLoading, setBranchesLoading] = useState(true);
@@ -44,8 +46,6 @@ const isEdit = Boolean(editId);
   const [organizations, setOrganizations] = useState([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
   
-  const [currentUser, setCurrentUser] = useState(null);
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [formError, setFormError]       = useState('');
 
@@ -74,17 +74,6 @@ const isEdit = Boolean(editId);
       }
     };
     
-    const fetchMe = async () => {
-      try {
-        const res = await authService.getMe();
-        if (res.success) {
-          setCurrentUser(res.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch user info:', err);
-      }
-    };
-
     const fetchOrgs = async () => {
       try {
         const res = await organizationService.getOrganizations();
@@ -97,7 +86,6 @@ const isEdit = Boolean(editId);
     };
 
     fetchRoles();
-    fetchMe();
     fetchOrgs();
   }, []);
 
